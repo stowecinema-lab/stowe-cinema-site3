@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Film,
   MapPin,
   Menu,
@@ -213,7 +215,6 @@ function getNextWeekday(targetDay: number) {
 
   const currentDay = date.getDay();
   let offset = (targetDay - currentDay + 7) % 7;
-
   if (offset === 0) offset = 7;
 
   date.setDate(date.getDate() + offset);
@@ -377,8 +378,20 @@ function DateSelector({
   onSelect: (dateKey: string) => void;
 }) {
   return (
-    <div className="mt-2">
-      <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="relative">
+      <div className="pointer-events-none absolute left-0 top-1/2 z-10 hidden -translate-y-1/2 md:block">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#08101b]/90 text-white/70 backdrop-blur">
+          <ChevronLeft className="h-4 w-4" />
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 md:block">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#08101b]/90 text-white/70 backdrop-blur">
+          <ChevronRight className="h-4 w-4" />
+        </div>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 md:px-14">
         {dates.map((date) => {
           const key = normalizeDateKey(date);
           const active = key === selectedDate;
@@ -554,8 +567,8 @@ export default function Page() {
 
           <div className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-white/70">
             Every Wednesday night, we feature a rotating{" "}
-            <span className="font-semibold text-white">horror movie</span>. A different
-            film every week on the big screen.
+            <span className="font-semibold text-white">FREE horror movie</span>. A
+            different film every week on the big screen.
           </div>
 
           <div className="mt-6 flex justify-center">
