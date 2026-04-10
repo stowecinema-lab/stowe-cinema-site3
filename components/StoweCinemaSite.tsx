@@ -435,39 +435,30 @@ export default function StoweCinemaSite() {
         </div>
       </section>
 
-      <section id="private-events" className="border-t border-white/10 bg-[#0a1220]">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-          <SectionHeading eyebrow="Private Events" title="Private screenings, parties, and group nights deserve a premium presentation." text="I left this section ready for your rental pricing, event packages, and booking information so we can drop your old-site details straight in." />
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <InfoCard icon={<PartyPopper className="h-5 w-5" />} title="Private Screenings" text="Birthday parties, company events, fundraisers, and sports watch nights all belong on a dedicated premium rentals page." />
-            <InfoCard icon={<Sparkles className="h-5 w-5" />} title="Ready for Your Details" text="Send your private-event pricing, food packages, and policies and I’ll lay them into this section cleanly." />
-          </div>
-        </div>
-      </section>
+      const PrivateEventsPage = () => (
+  <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+    <SectionHeading
+      eyebrow="Private Events"
+      title="Private screenings, parties, and unforgettable group nights."
+      text="Host your next birthday party, company outing, fundraiser, sports watch event, or special celebration at Stowe Cinema."
+    />
 
-      <section id="contact" className="border-t border-white/10 bg-[#08101b]">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
-          <SectionHeading eyebrow="Contact & Visit" title="Everything guests need to find you quickly." />
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[32px] border border-white/10 bg-[#0d1624] p-8">
-              <div className="space-y-5 text-white/78">
-                <div className="flex gap-3"><MapPin className="mt-1 h-5 w-5 text-[#8bbcff]" /><div><div className="font-medium text-white">Address</div><div>454 Mountain Road, Stowe, VT</div></div></div>
-                <div className="flex gap-3"><CalendarDays className="mt-1 h-5 w-5 text-[#8bbcff]" /><div><div className="font-medium text-white">Hours & special nights</div><div>Add your current hours and any recurring promotions here.</div></div></div>
-              </div>
-            </div>
-            <div className="rounded-[32px] border border-white/10 bg-[#0d1624] p-8 text-white/72">
-              <div className="text-2xl font-semibold text-white">Still to add from your old site</div>
-              <div className="mt-5 space-y-3">
-                <p>Exact hours of operation</p>
-                <p>Phone numbers and contact emails</p>
-                <p>FAQ or policies</p>
-                <p>Any other text you want moved over word-for-word</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="mt-10 grid gap-6 lg:grid-cols-2">
+      <InfoCard
+        icon={<PartyPopper className="h-5 w-5" />}
+        title="Private Screenings"
+        text="Enjoy a premium big-screen experience for birthday parties, company events, fundraisers, sports watch parties, school groups, and more."
+      />
+      <InfoCard
+        icon={<Sparkles className="h-5 w-5" />}
+        title="Custom Event Options"
+        text="Private events can include movie screenings, food and drink packages, and customized group experiences designed to make your event easy and memorable."
+      />
+    </div>
+  </section>
+);
 
+      
       <footer className="border-t border-white/10 bg-[#08101b]">
   <div className="mx-auto max-w-7xl px-6 py-12 text-center">
     <div className="text-2xl font-semibold text-white">
