@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Film,
   MapPin,
   Menu,
@@ -80,7 +82,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 3,
-        time: new Date(Date.now() + 90 * 60 * 1000).toISOString(),
+        time: new Date(Date.now() + 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -101,7 +103,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 4,
-        time: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+        time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: true,
@@ -122,7 +124,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 5,
-        time: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
+        time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -175,16 +177,59 @@ function formatDay(dateString: string) {
   }
 }
 
+function formatMonthDay(date: Date) {
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatWeekday(date: Date) {
+  return date.toLocaleDateString([], {
+    weekday: "short",
+  });
+}
+
+function normalizeDateKey(input: string | Date) {
+  const d = new Date(input);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().split("T")[0];
+}
+
+function isToday(date: Date) {
+  return normalizeDateKey(date) === normalizeDateKey(new Date());
+}
+
+function getDateRange(days = 10) {
+  return Array.from({ length: days }, (_, index) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + index);
+    return d;
+  });
+}
+
 function groupByDay(movies: Movie[]) {
-  const grouped: Record<string, Array<Showtime & { movieTitle: string }>> = {};
+  const grouped: Record<string, Array<Showtime & { movieTitle: string; rating?: string }>> = {};
   movies.forEach((movie) => {
     movie.showtimes.forEach((show) => {
-      const key = new Date(show.time).toDateString();
+      const key = normalizeDateKey(show.time);
       if (!grouped[key]) grouped[key] = [];
-      grouped[key].push({ ...show, movieTitle: movie.title });
+      grouped[key].push({ ...show, movieTitle: movie.title, rating: movie.rating });
     });
   });
   return grouped;
+}
+
+function filterMoviesForDate(movies: Movie[], selectedDate: string) {
+  return movies
+    .map((movie) => ({
+      ...movie,
+      showtimes: movie.showtimes.filter(
+        (show) => normalizeDateKey(show.time) === selectedDate
+      ),
+    }))
+    .filter((movie) => movie.showtimes.length > 0);
 }
 
 function MoviePoster({ title, poster }: { title: string; poster?: string }) {
@@ -311,10 +356,52 @@ function InfoCard({
   );
 }
 
+function DateSelector({
+  dates,
+  selectedDate,
+  onSelect,
+}: {
+  dates: Date[];
+  selectedDate: string;
+  onSelect: (dateKey: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 overflow-x-auto pb-2">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
+        <ChevronLeft className="h-4 w-4" />
+      </div>
+      {dates.map((date) => {
+        const key = normalizeDateKey(date);
+        const active = key === selectedDate;
+        return (
+          <button
+            key={key}
+            onClick={() => onSelect(key)}
+            className={`min-w-[108px] shrink-0 rounded-2xl border px-4 py-3 text-left transition ${
+              active
+                ? "border-[#77aef7]/35 bg-[#77aef7]/15 text-white"
+                : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+            }`}
+          >
+            <div className="text-[11px] uppercase tracking-[0.22em] text-white/45">
+              {isToday(date) ? "Today" : formatWeekday(date)}
+            </div>
+            <div className="mt-1 text-base font-semibold">{formatMonthDay(date)}</div>
+          </button>
+        );
+      })}
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
+        <ChevronRight className="h-4 w-4" />
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const [movies, setMovies] = useState<Movie[]>(fallbackMovies);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState("home");
+  const [selectedDate, setSelectedDate] = useState(normalizeDateKey(new Date()));
 
   useEffect(() => {
     let active = true;
@@ -349,6 +436,19 @@ export default function Page() {
   }, []);
 
   const groupedDays = useMemo(() => groupByDay(movies), [movies]);
+  const selectableDates = useMemo(() => getDateRange(10), []);
+  const selectedDayMovies = useMemo(
+    () => filterMoviesForDate(movies, selectedDate),
+    [movies, selectedDate]
+  );
+
+  useEffect(() => {
+    const hasSelectedDateContent = selectedDayMovies.length > 0;
+    if (!hasSelectedDateContent) {
+      const firstAvailableDate = Object.keys(groupedDays).sort()[0];
+      if (firstAvailableDate) setSelectedDate(firstAvailableDate);
+    }
+  }, [groupedDays, selectedDayMovies.length]);
 
   const pageLinks = [
     { id: "home", label: "Home" },
@@ -370,20 +470,34 @@ export default function Page() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
-        <div className="mb-6">
-          <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
-            Now Playing
-          </div>
-          <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45">
-            Movies • Showtimes • Tickets
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              Showtimes
+            </div>
+            <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45">
+              Choose a day, then pick your movie and showtime
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {movies.map((movie) => (
+        <DateSelector
+          dates={selectableDates}
+          selectedDate={selectedDate}
+          onSelect={setSelectedDate}
+        />
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {selectedDayMovies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}
         </div>
+
+        {selectedDayMovies.length === 0 ? (
+          <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
+            No showtimes found for this date.
+          </div>
+        ) : null}
 
         <div className="mt-16 rounded-[32px] border border-[#77aef7]/30 bg-gradient-to-br from-[#0c1626] to-[#0a1220] p-8 text-center md:p-10">
           <div className="text-xs uppercase tracking-[0.3em] text-[#9fc4ff]">
@@ -447,8 +561,13 @@ export default function Page() {
       <div className="mb-6 inline-flex items-center rounded-full border border-[#7db3ff]/20 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.3em] text-[#a9cdff]">
         Now Playing
       </div>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {movies.map((movie) => (
+      <DateSelector
+        dates={selectableDates}
+        selectedDate={selectedDate}
+        onSelect={setSelectedDate}
+      />
+      <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {selectedDayMovies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} />
         ))}
       </div>
@@ -463,34 +582,36 @@ export default function Page() {
         text="Grouped by day, clean on mobile, and focused on getting people into checkout quickly."
       />
       <div className="mt-10 grid gap-6">
-        {Object.entries(groupedDays).map(([day, shows]) => (
-          <div key={day} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-            <div className="text-xl font-semibold text-white">
-              {formatDay(shows[0]?.time || day)}
-            </div>
-            <div className="mt-4 grid gap-3">
-              {shows.map((show) => (
-                <div
-                  key={String(show.sessionId)}
-                  className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 md:flex-row md:items-center"
-                >
-                  <div>
-                    <div className="text-lg font-medium text-white">{show.movieTitle}</div>
-                    <div className="mt-1 text-sm text-white/55">{formatShowtime(show.time)}</div>
-                  </div>
-                  <a
-                    href={show.url || VEEZI_TICKETING_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl bg-[#77aef7] px-4 py-2 text-sm font-semibold text-[#09111e]"
+        {Object.entries(groupedDays)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([day, shows]) => (
+            <div key={day} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
+              <div className="text-xl font-semibold text-white">
+                {formatDay(shows[0]?.time || day)}
+              </div>
+              <div className="mt-4 grid gap-3">
+                {shows.map((show) => (
+                  <div
+                    key={String(show.sessionId)}
+                    className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 md:flex-row md:items-center"
                   >
-                    Buy Tickets
-                  </a>
-                </div>
-              ))}
+                    <div>
+                      <div className="text-lg font-medium text-white">{show.movieTitle}</div>
+                      <div className="mt-1 text-sm text-white/55">{formatShowtime(show.time)}</div>
+                    </div>
+                    <a
+                      href={show.url || VEEZI_TICKETING_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-xl bg-[#77aef7] px-4 py-2 text-sm font-semibold text-[#09111e]"
+                    >
+                      Buy Tickets
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     </section>
   );
@@ -707,13 +828,9 @@ export default function Page() {
       <footer className="border-t border-white/10 bg-[#08101b]">
         <div className="mx-auto max-w-7xl px-6 py-12 text-center">
           <div className="text-2xl font-semibold text-white">Stowe Cinema</div>
-
           <div className="mt-4 text-white/70">454 Mountain Road, Stowe, VT</div>
-
           <div className="mt-2 text-white/70">📞 802-585-3195</div>
-
           <div className="mt-2 text-white/70">✉️ stowecinema@gmail.com</div>
-
           <div className="mt-6 text-sm text-white/40">
             © {new Date().getFullYear()} Stowe Cinema. All rights reserved.
           </div>
