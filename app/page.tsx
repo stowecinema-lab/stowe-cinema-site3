@@ -4,8 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Film,
   MapPin,
   Menu,
@@ -103,7 +101,9 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 4,
-        time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000).toISOString(),
+        time: new Date(
+          Date.now() + 2 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
+        ).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: true,
@@ -124,7 +124,9 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 5,
-        time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000).toISOString(),
+        time: new Date(
+          Date.now() + 3 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000
+        ).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -165,7 +167,7 @@ function formatShowtime(dateString: string) {
   }
 }
 
-function formatDay(dateString: string) {
+function formatLongDate(dateString: string) {
   try {
     return new Date(dateString).toLocaleDateString([], {
       weekday: "long",
@@ -175,19 +177,6 @@ function formatDay(dateString: string) {
   } catch {
     return dateString;
   }
-}
-
-function formatMonthDay(date: Date) {
-  return date.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatWeekday(date: Date) {
-  return date.toLocaleDateString([], {
-    weekday: "short",
-  });
 }
 
 function normalizeDateKey(input: string | Date) {
@@ -200,6 +189,19 @@ function isToday(date: Date) {
   return normalizeDateKey(date) === normalizeDateKey(new Date());
 }
 
+function formatShortMonthDay(date: Date) {
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatShortWeekday(date: Date) {
+  return date.toLocaleDateString([], {
+    weekday: "short",
+  });
+}
+
 function getDateRange(days = 10) {
   return Array.from({ length: days }, (_, index) => {
     const d = new Date();
@@ -210,12 +212,12 @@ function getDateRange(days = 10) {
 }
 
 function groupByDay(movies: Movie[]) {
-  const grouped: Record<string, Array<Showtime & { movieTitle: string; rating?: string }>> = {};
+  const grouped: Record<string, Array<Showtime & { movieTitle: string }>> = {};
   movies.forEach((movie) => {
     movie.showtimes.forEach((show) => {
       const key = normalizeDateKey(show.time);
       if (!grouped[key]) grouped[key] = [];
-      grouped[key].push({ ...show, movieTitle: movie.title, rating: movie.rating });
+      grouped[key].push({ ...show, movieTitle: movie.title });
     });
   });
   return grouped;
@@ -238,7 +240,7 @@ function MoviePoster({ title, poster }: { title: string; poster?: string }) {
   }
 
   return (
-    <div className="relative flex h-full w-full items-end overflow-hidden bg-[linear-gradient(180deg,rgba(119,174,247,0.14),rgba(8,15,27,0.98))] p-5">
+    <div className="relative flex h-full w-full items-end overflow-hidden bg-[linear-gradient(180deg,rgba(119,174,247,0.16),rgba(8,15,27,0.98))] p-5">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(145,190,255,0.14),transparent_35%)]" />
       <div className="relative z-10">
         <div className="text-[10px] uppercase tracking-[0.25em] text-white/70">
@@ -366,32 +368,31 @@ function DateSelector({
   onSelect: (dateKey: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
-        <ChevronLeft className="h-4 w-4" />
-      </div>
-      {dates.map((date) => {
-        const key = normalizeDateKey(date);
-        const active = key === selectedDate;
-        return (
-          <button
-            key={key}
-            onClick={() => onSelect(key)}
-            className={`min-w-[108px] shrink-0 rounded-2xl border px-4 py-3 text-left transition ${
-              active
-                ? "border-[#77aef7]/35 bg-[#77aef7]/15 text-white"
-                : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-            }`}
-          >
-            <div className="text-[11px] uppercase tracking-[0.22em] text-white/45">
-              {isToday(date) ? "Today" : formatWeekday(date)}
-            </div>
-            <div className="mt-1 text-base font-semibold">{formatMonthDay(date)}</div>
-          </button>
-        );
-      })}
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
-        <ChevronRight className="h-4 w-4" />
+    <div className="relative">
+      <div className="flex items-center gap-3 overflow-x-auto pb-2">
+        {dates.map((date) => {
+          const key = normalizeDateKey(date);
+          const active = key === selectedDate;
+
+          return (
+            <button
+              key={key}
+              onClick={() => onSelect(key)}
+              className={`min-w-[110px] shrink-0 rounded-2xl border px-4 py-3 text-left transition ${
+                active
+                  ? "border-[#77aef7]/35 bg-[#77aef7]/15 text-white"
+                  : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+              }`}
+            >
+              <div className="text-[11px] uppercase tracking-[0.22em] text-white/45">
+                {isToday(date) ? "Today" : formatShortWeekday(date)}
+              </div>
+              <div className="mt-1 text-base font-semibold">
+                {formatShortMonthDay(date)}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -418,7 +419,7 @@ export default function Page() {
             showtimes: Array.isArray(movie.showtimes)
               ? movie.showtimes.map((show) => ({
                   ...show,
-                  url: show.url && show.url !== "#" ? show.url : VEEZI_TICKETING_URL,
+                  url: show.url || VEEZI_TICKETING_URL,
                 }))
               : [],
           }));
@@ -443,8 +444,7 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const hasSelectedDateContent = selectedDayMovies.length > 0;
-    if (!hasSelectedDateContent) {
+    if (selectedDayMovies.length === 0) {
       const firstAvailableDate = Object.keys(groupedDays).sort()[0];
       if (firstAvailableDate) setSelectedDate(firstAvailableDate);
     }
@@ -470,14 +470,12 @@ export default function Page() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
-              Showtimes
-            </div>
-            <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45">
-              Choose a day, then pick your movie and showtime
-            </div>
+        <div className="mb-6">
+          <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+            Showtimes
+          </div>
+          <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45">
+            Select a date, then choose your movie and showtime
           </div>
         </div>
 
@@ -487,17 +485,25 @@ export default function Page() {
           onSelect={setSelectedDate}
         />
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {selectedDayMovies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
-          ))}
-        </div>
-
-        {selectedDayMovies.length === 0 ? (
-          <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
-            No showtimes found for this date.
+        <div className="mt-8">
+          <div className="mb-5 text-xl font-semibold text-white">
+            {selectedDayMovies.length > 0
+              ? formatLongDate(selectedDayMovies[0].showtimes[0].time)
+              : formatLongDate(selectedDate)}
           </div>
-        ) : null}
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {selectedDayMovies.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
+
+          {selectedDayMovies.length === 0 ? (
+            <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
+              No showtimes found for this date.
+            </div>
+          ) : null}
+        </div>
 
         <div className="mt-16 rounded-[32px] border border-[#77aef7]/30 bg-gradient-to-br from-[#0c1626] to-[#0a1220] p-8 text-center md:p-10">
           <div className="text-xs uppercase tracking-[0.3em] text-[#9fc4ff]">
@@ -561,11 +567,13 @@ export default function Page() {
       <div className="mb-6 inline-flex items-center rounded-full border border-[#7db3ff]/20 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.3em] text-[#a9cdff]">
         Now Playing
       </div>
+
       <DateSelector
         dates={selectableDates}
         selectedDate={selectedDate}
         onSelect={setSelectedDate}
       />
+
       <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {selectedDayMovies.map((movie) => (
           <MovieCard key={movie.id} movie={movie} />
@@ -587,7 +595,7 @@ export default function Page() {
           .map(([day, shows]) => (
             <div key={day} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
               <div className="text-xl font-semibold text-white">
-                {formatDay(shows[0]?.time || day)}
+                {formatLongDate(day)}
               </div>
               <div className="mt-4 grid gap-3">
                 {shows.map((show) => (
