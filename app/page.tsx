@@ -80,7 +80,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 3,
-        time: new Date(Date.now() + 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+        time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -101,9 +101,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 4,
-        time: new Date(
-          Date.now() + 2 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000
-        ).toISOString(),
+        time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: true,
@@ -124,9 +122,7 @@ const fallbackMovies: Movie[] = [
     showtimes: [
       {
         sessionId: 5,
-        time: new Date(
-          Date.now() + 3 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000
-        ).toISOString(),
+        time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -209,6 +205,19 @@ function getDateRange(days = 10) {
     d.setDate(d.getDate() + index);
     return d;
   });
+}
+
+function getNextWeekday(targetDay: number) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+
+  const currentDay = date.getDay();
+  let offset = (targetDay - currentDay + 7) % 7;
+
+  if (offset === 0) offset = 7;
+
+  date.setDate(date.getDate() + offset);
+  return date;
 }
 
 function groupByDay(movies: Movie[]) {
@@ -368,8 +377,8 @@ function DateSelector({
   onSelect: (dateKey: string) => void;
 }) {
   return (
-    <div className="relative">
-      <div className="flex items-center gap-3 overflow-x-auto pb-2">
+    <div className="mt-2">
+      <div className="flex gap-3 overflow-x-auto pb-2">
         {dates.map((date) => {
           const key = normalizeDateKey(date);
           const active = key === selectedDate;
@@ -378,16 +387,16 @@ function DateSelector({
             <button
               key={key}
               onClick={() => onSelect(key)}
-              className={`min-w-[110px] shrink-0 rounded-2xl border px-4 py-3 text-left transition ${
+              className={`min-w-[118px] shrink-0 rounded-[20px] border px-4 py-3 text-left transition ${
                 active
-                  ? "border-[#77aef7]/35 bg-[#77aef7]/15 text-white"
+                  ? "border-[#77aef7]/40 bg-[#77aef7]/18 text-white shadow-lg shadow-[#77aef7]/10"
                   : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
               }`}
             >
               <div className="text-[11px] uppercase tracking-[0.22em] text-white/45">
                 {isToday(date) ? "Today" : formatShortWeekday(date)}
               </div>
-              <div className="mt-1 text-base font-semibold">
+              <div className="mt-1 text-lg font-semibold">
                 {formatShortMonthDay(date)}
               </div>
             </button>
@@ -521,14 +530,16 @@ export default function Page() {
           </div>
 
           <div className="mt-6 flex justify-center">
-            <a
-              href={VEEZI_TICKETING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => {
+                setActivePage("home");
+                setSelectedDate(normalizeDateKey(getNextWeekday(2)));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="rounded-2xl bg-[#77aef7] px-6 py-3 font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
             >
               View Tuesday Showtimes
-            </a>
+            </button>
           </div>
         </div>
 
@@ -548,14 +559,16 @@ export default function Page() {
           </div>
 
           <div className="mt-6 flex justify-center">
-            <a
-              href={VEEZI_TICKETING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => {
+                setActivePage("home");
+                setSelectedDate(normalizeDateKey(getNextWeekday(3)));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-400"
             >
               View Wednesday Showtimes
-            </a>
+            </button>
           </div>
         </div>
       </section>
