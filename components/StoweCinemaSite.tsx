@@ -468,18 +468,30 @@ export default function StoweCinemaSite() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 bg-[#08101b]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <LogoMark />
-            <p className="mt-3 max-w-2xl leading-7 text-white/62">
-              A live Veezi-ready Stowe Cinema site focused on what matters most: movie posters, showtimes, and direct ticket sales.
-            </p>
-          </div>
-          <a href="#showtimes" className="rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e]">
-            Buy Tickets
-          </a>
-        </div>
+      <footer <footer className="border-t border-white/10 bg-[#08101b]">
+  <div className="mx-auto max-w-7xl px-6 py-12 text-center">
+    
+    <div className="text-2xl font-semibold text-white">
+      Stowe Cinema
+    </div>
+
+    <div className="mt-4 text-white/70">
+      454 Mountain Road, Stowe, VT
+    </div>
+
+    <div className="mt-2 text-white/70">
+      📞 802-585-3195
+    </div>
+
+    <div className="mt-2 text-white/70">
+      ✉️ stowecinema@gmail.com
+    </div>
+
+    <div className="mt-6 text-sm text-white/40">
+      © {new Date().getFullYear()} Stowe Cinema. All rights reserved.
+    </div>
+
+  </div>
       </footer>
     </div>
   );
