@@ -5,8 +5,14 @@ export async function GET() {
   };
 
   const [filmsRes, sessionsRes] = await Promise.all([
-    fetch("https://api.useast.veezi.com/v4/film", { headers, cache: "no-store" }),
-    fetch("https://api.useast.veezi.com/v1/websession", { headers, cache: "no-store" }),
+    fetch("https://api.useast.veezi.com/v4/film", {
+      headers,
+      cache: "no-store",
+    }),
+    fetch("https://api.useast.veezi.com/v1/websession", {
+      headers,
+      cache: "no-store",
+    }),
   ]);
 
   if (!filmsRes.ok || !sessionsRes.ok) {
@@ -20,23 +26,28 @@ export async function GET() {
     );
   }
 
-  const films = await filmsRes.json();
-  const sessions = await sessionsRes.json();
+  const films: any[] = await filmsRes.json();
+  const sessions: any[] = await sessionsRes.json();
 
-  const filmMap = new Map(films.map((film: any) => [film.Id, film]));
+  const filmMap = new Map<string, any>(
+    films.map((film: any) => [String(film.Id), film])
+  );
+
   const grouped = new Map<string, any>();
 
   for (const session of sessions) {
-    const film = filmMap.get(session.FilmId);
+    const filmId = String(session.FilmId);
+    const film = filmMap.get(filmId);
+
     if (!film) continue;
 
-    if (!grouped.has(session.FilmId)) {
-      grouped.set(session.FilmId, {
-        id: film.Id,
-        title: film.Title,
-        rating: film.Rating,
-        duration: film.Duration,
-        synopsis: film.Synopsis,
+    if (!grouped.has(filmId)) {
+      grouped.set(filmId, {
+        id: String(film.Id),
+        title: film.Title || "",
+        rating: film.Rating || "",
+        duration: film.Duration || 0,
+        synopsis: film.Synopsis || "",
         poster: film.FilmPosterUrl || film.FilmPosterThumbnailUrl || "",
         backdrop: film.BackdropImageUrl || "",
         trailer: film.FilmTrailerUrl || "",
@@ -44,17 +55,13 @@ export async function GET() {
       });
     }
 
-    grouped.get(session.FilmId).showtimes.push({
-      sessionId: session.Id,
+    grouped.get(filmId).showtimes.push({
+      sessionId: String(session.Id),
       time: session.FeatureStartTime || session.PreShowStartTime,
-      url:
-        session.URL ||
-        session.Url ||
-        session.url ||
-        "",
-      soldOut: session.TicketsSoldOut,
-      fewTicketsLeft: session.FewTicketsLeft,
-      format: session.FilmFormat,
+      url: session.URL || session.Url || session.url || "",
+      soldOut: !!session.TicketsSoldOut,
+      fewTicketsLeft: !!session.FewTicketsLeft,
+      format: session.FilmFormat || "",
     });
   }
 
