@@ -468,9 +468,8 @@ export default function StoweCinemaSite() {
         </div>
       </section>
 
-      <footer <footer className="border-t border-white/10 bg-[#08101b]">
+      <footer className="border-t border-white/10 bg-[#08101b]">
   <div className="mx-auto max-w-7xl px-6 py-12 text-center">
-    
     <div className="text-2xl font-semibold text-white">
       Stowe Cinema
     </div>
@@ -490,9 +489,8 @@ export default function StoweCinemaSite() {
     <div className="mt-6 text-sm text-white/40">
       © {new Date().getFullYear()} Stowe Cinema. All rights reserved.
     </div>
-
   </div>
-      </footer>
-    </div>
-  );
+</footer>
+</div>
+);
 }
