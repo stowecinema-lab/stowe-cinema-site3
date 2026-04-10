@@ -194,12 +194,6 @@ function formatShortMonthDay(date: Date) {
   });
 }
 
-function formatShortWeekday(date: Date) {
-  return date.toLocaleDateString([], {
-    weekday: "short",
-  });
-}
-
 function getDateRange(days = 10) {
   return Array.from({ length: days }, (_, index) => {
     const d = new Date();
@@ -219,6 +213,13 @@ function getNextWeekday(targetDay: number) {
 
   date.setDate(date.getDate() + offset);
   return date;
+}
+
+function isTomorrow(date: Date) {
+  const tomorrow = new Date();
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return normalizeDateKey(date) === normalizeDateKey(tomorrow);
 }
 
 function groupByDay(movies: Movie[]) {
@@ -378,43 +379,63 @@ function DateSelector({
   onSelect: (dateKey: string) => void;
 }) {
   return (
-    <div className="relative">
-      <div className="pointer-events-none absolute left-0 top-1/2 z-10 hidden -translate-y-1/2 md:block">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#08101b]/90 text-white/70 backdrop-blur">
-          <ChevronLeft className="h-4 w-4" />
+    <div className="mt-4">
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-center gap-3">
+          <div className="hidden h-[110px] w-[52px] shrink-0 items-center justify-center text-white/50 md:flex">
+            <ChevronLeft className="h-8 w-8" />
+          </div>
+
+          <div className="flex flex-1 overflow-x-auto bg-black/30">
+            {dates.map((date) => {
+              const key = normalizeDateKey(date);
+              const active = key === selectedDate;
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => onSelect(key)}
+                  className={`min-w-[150px] shrink-0 border-r border-white/5 px-6 py-5 text-center transition ${
+                    active
+                      ? "bg-red-600 text-white"
+                      : "bg-black/40 text-white/60 hover:bg-black/55 hover:text-white/90"
+                  }`}
+                >
+                  <div
+                    className={`text-sm font-semibold ${
+                      active ? "text-white/90" : "text-white/50"
+                    }`}
+                  >
+                    {date.toLocaleDateString([], { month: "long" })}
+                  </div>
+
+                  <div className="mt-2 text-6xl font-bold leading-none">
+                    {date.getDate()}
+                  </div>
+
+                  <div className="mt-2 text-sm font-semibold">
+                    {isToday(date)
+                      ? "Today"
+                      : isTomorrow(date)
+                      ? "Tomorrow"
+                      : date.toLocaleDateString([], { weekday: "long" })}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="hidden h-[110px] w-[52px] shrink-0 items-center justify-center text-white/50 md:flex">
+            <ChevronRight className="h-8 w-8" />
+          </div>
         </div>
-      </div>
 
-      <div className="pointer-events-none absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 md:block">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#08101b]/90 text-white/70 backdrop-blur">
-          <ChevronRight className="h-4 w-4" />
+        <div className="mt-5 flex justify-center">
+          <button className="inline-flex items-center gap-2 border-2 border-yellow-400 px-6 py-3 font-semibold text-yellow-300 transition hover:bg-yellow-400/10">
+            <CalendarDays className="h-5 w-5" />
+            Select Future Date
+          </button>
         </div>
-      </div>
-
-      <div className="flex gap-3 overflow-x-auto pb-2 md:px-14">
-        {dates.map((date) => {
-          const key = normalizeDateKey(date);
-          const active = key === selectedDate;
-
-          return (
-            <button
-              key={key}
-              onClick={() => onSelect(key)}
-              className={`min-w-[118px] shrink-0 rounded-[20px] border px-4 py-3 text-left transition ${
-                active
-                  ? "border-[#77aef7]/40 bg-[#77aef7]/18 text-white shadow-lg shadow-[#77aef7]/10"
-                  : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-              }`}
-            >
-              <div className="text-[11px] uppercase tracking-[0.22em] text-white/45">
-                {isToday(date) ? "Today" : formatShortWeekday(date)}
-              </div>
-              <div className="mt-1 text-lg font-semibold">
-                {formatShortMonthDay(date)}
-              </div>
-            </button>
-          );
-        })}
       </div>
     </div>
   );
@@ -492,11 +513,11 @@ export default function Page() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
-        <div className="mb-6">
+        <div className="mb-6 text-center">
           <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
             Showtimes
           </div>
-          <div className="mt-2 text-sm uppercase tracking-[0.22em] text-white/45">
+          <div className="mt-2 text-sm uppercase tracking-[0.28em] text-[#86b7ff]">
             Select a date, then choose your movie and showtime
           </div>
         </div>
