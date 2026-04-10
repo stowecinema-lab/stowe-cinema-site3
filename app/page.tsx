@@ -274,10 +274,10 @@ function ShowtimeChip({ show }: { show: Showtime }) {
       href={show.url || VEEZI_TICKETING_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`rounded-full border px-3 py-1.5 text-sm transition ${
+      className={`rounded-full border px-3 py-1.5 text-sm transition-all duration-200 ${
         soldOut
           ? "cursor-default border-white/10 bg-white/5 text-white/40"
-          : "border-white/10 bg-white/5 text-white/90 hover:bg-white/10"
+          : "border-white/10 bg-white/5 text-white/90 hover:scale-105 hover:bg-[#77aef7] hover:text-[#09111e] hover:shadow-lg hover:shadow-[#77aef7]/20"
       }`}
     >
       {formatShowtime(show.time)}
@@ -288,6 +288,9 @@ function ShowtimeChip({ show }: { show: Showtime }) {
 
 function MovieCard({ movie }: { movie: Movie }) {
   const heroUrl = movie.poster || movie.backdrop;
+  const firstValidUrl =
+    movie.showtimes.find((s) => s.url)?.url || VEEZI_TICKETING_URL;
+  const hasMultipleShowtimes = movie.showtimes.length > 1;
 
   return (
     <div className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-white/20">
@@ -314,14 +317,25 @@ function MovieCard({ movie }: { movie: Movie }) {
           ))}
         </div>
 
-        <a
-          href={movie.showtimes.find((s) => s.url)?.url || VEEZI_TICKETING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 block w-full rounded-xl bg-[#77aef7] px-4 py-3 text-center text-sm font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
-        >
-          Buy Tickets
-        </a>
+        {hasMultipleShowtimes ? (
+          <div className="mt-4">
+            <div className="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/90">
+              Select Showtime
+            </div>
+            <div className="mt-2 text-center text-xs text-white/50">
+              Tap a showtime above to book that specific show.
+            </div>
+          </div>
+        ) : (
+          <a
+            href={firstValidUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 block w-full rounded-xl bg-[#77aef7] px-4 py-3 text-center text-sm font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
+          >
+            Buy Tickets
+          </a>
+        )}
       </div>
     </div>
   );
