@@ -1,16 +1,16 @@
 export async function GET() {
-  const headers = {
+  const veeziHeaders = {
     VeeziAccessToken: process.env.VEEZI_API_TOKEN || "",
     Accept: "application/json",
   };
 
   const [filmsRes, sessionsRes] = await Promise.all([
     fetch("https://api.useast.veezi.com/v4/film", {
-      headers,
+      headers: veeziHeaders,
       cache: "no-store",
     }),
     fetch("https://api.useast.veezi.com/v1/websession", {
-      headers,
+      headers: veeziHeaders,
       cache: "no-store",
     }),
   ]);
@@ -31,43 +31,82 @@ export async function GET() {
 
   const normalizeUrl = (url?: string) => {
     if (!url) return "";
-    return String(url).replace(/^http:\/\//i, "https://");
+    return String(url).replace(/^http:\/\//i, "https://").trim();
   };
 
-  const pickPoster = (film: any) => {
-    const candidates = [
-      film.FilmPosterUrl,
-      film.FilmPosterThumbnailUrl,
-      film.PosterUrl,
-      film.PosterThumbnailUrl,
-      film.BackdropImageUrl,
-      film.BannerImageUrl,
-      film.ImageUrl,
-      film.ThumbnailUrl,
-      film?.Images?.Poster,
-      film?.Images?.PosterUrl,
-      film?.Images?.ThumbnailUrl,
-      film?.Media?.PosterUrl,
-      film?.Media?.ThumbnailUrl,
-    ]
-      .map(normalizeUrl)
-      .filter(Boolean);
-
-    return candidates[0] || "";
+  const unique = (values: string[]) => {
+    return Array.from(new Set(values.filter(Boolean)));
   };
 
-  const pickBackdrop = (film: any) => {
-    const candidates = [
-      film.BackdropImageUrl,
-      film.BannerImageUrl,
-      film.FilmPosterUrl,
-      film.FilmPosterThumbnailUrl,
-      film.PosterUrl,
-    ]
-      .map(normalizeUrl)
-      .filter(Boolean);
+  const looksLikeImage = (contentType: string | null) => {
+    if (!contentType) return false;
+    return (
+      contentType.startsWith("image/") ||
+      contentType.includes("octet-stream") ||
+      contentType.includes("binary")
+    );
+  };
 
-    return candidates[0] || "";
+  const urlLoadsAsImage = async (url: string) => {
+    try {
+      let res = await fetch(url, {
+        method: "HEAD",
+        cache: "no-store",
+      });
+
+      let contentType = res.headers.get("content-type");
+
+      if (!res.ok || !looksLikeImage(contentType)) {
+        res = await fetch(url, {
+          cache: "no-store",
+        });
+        contentType = res.headers.get("content-type");
+      }
+
+      return res.ok && looksLikeImage(contentType);
+    } catch {
+      return false;
+    }
+  };
+
+  const getPosterCandidates = (film: any) =>
+    unique(
+      [
+        film.FilmPosterUrl,
+        film.FilmPosterThumbnailUrl,
+        film.PosterUrl,
+        film.PosterThumbnailUrl,
+        film.ImageUrl,
+        film.ThumbnailUrl,
+        film.BackdropImageUrl,
+        film.BannerImageUrl,
+        film?.Images?.Poster,
+        film?.Images?.PosterUrl,
+        film?.Images?.ThumbnailUrl,
+        film?.Media?.PosterUrl,
+        film?.Media?.ThumbnailUrl,
+      ].map(normalizeUrl)
+    );
+
+  const getBackdropCandidates = (film: any) =>
+    unique(
+      [
+        film.BackdropImageUrl,
+        film.BannerImageUrl,
+        film.FilmPosterUrl,
+        film.FilmPosterThumbnailUrl,
+        film.PosterUrl,
+        film.PosterThumbnailUrl,
+      ].map(normalizeUrl)
+    );
+
+  const pickFirstWorkingImage = async (candidates: string[]) => {
+    for (const candidate of candidates) {
+      if (await urlLoadsAsImage(candidate)) {
+        return candidate;
+      }
+    }
+    return "";
   };
 
   const filmMap = new Map<string, any>(
@@ -83,14 +122,17 @@ export async function GET() {
     if (!film) continue;
 
     if (!grouped.has(filmId)) {
+      const poster = await pickFirstWorkingImage(getPosterCandidates(film));
+      const backdrop = await pickFirstWorkingImage(getBackdropCandidates(film));
+
       grouped.set(filmId, {
         id: String(film.Id),
         title: film.Title || "",
         rating: film.Rating || "",
         duration: film.Duration || 0,
         synopsis: film.Synopsis || "",
-        poster: pickPoster(film),
-        backdrop: pickBackdrop(film),
+        poster,
+        backdrop,
         trailer: film.FilmTrailerUrl || "",
         showtimes: [],
       });
