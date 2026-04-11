@@ -1,16 +1,16 @@
 export async function GET() {
-  const veeziHeaders = {
+  const headers = {
     VeeziAccessToken: process.env.VEEZI_API_TOKEN || "",
     Accept: "application/json",
   };
 
   const [filmsRes, sessionsRes] = await Promise.all([
     fetch("https://api.useast.veezi.com/v4/film", {
-      headers: veeziHeaders,
+      headers,
       cache: "no-store",
     }),
     fetch("https://api.useast.veezi.com/v1/websession", {
-      headers: veeziHeaders,
+      headers,
       cache: "no-store",
     }),
   ]);
@@ -34,40 +34,8 @@ export async function GET() {
     return String(url).replace(/^http:\/\//i, "https://").trim();
   };
 
-  const unique = (values: string[]) => {
-    return Array.from(new Set(values.filter(Boolean)));
-  };
-
-  const looksLikeImage = (contentType: string | null) => {
-    if (!contentType) return false;
-    return (
-      contentType.startsWith("image/") ||
-      contentType.includes("octet-stream") ||
-      contentType.includes("binary")
-    );
-  };
-
-  const urlLoadsAsImage = async (url: string) => {
-    try {
-      let res = await fetch(url, {
-        method: "HEAD",
-        cache: "no-store",
-      });
-
-      let contentType = res.headers.get("content-type");
-
-      if (!res.ok || !looksLikeImage(contentType)) {
-        res = await fetch(url, {
-          cache: "no-store",
-        });
-        contentType = res.headers.get("content-type");
-      }
-
-      return res.ok && looksLikeImage(contentType);
-    } catch {
-      return false;
-    }
-  };
+  const unique = (values: string[]) =>
+    Array.from(new Set(values.filter(Boolean)));
 
   const getPosterCandidates = (film: any) =>
     unique(
@@ -97,17 +65,9 @@ export async function GET() {
         film.FilmPosterThumbnailUrl,
         film.PosterUrl,
         film.PosterThumbnailUrl,
+        film.ImageUrl,
       ].map(normalizeUrl)
     );
-
-  const pickFirstWorkingImage = async (candidates: string[]) => {
-    for (const candidate of candidates) {
-      if (await urlLoadsAsImage(candidate)) {
-        return candidate;
-      }
-    }
-    return "";
-  };
 
   const filmMap = new Map<string, any>(
     films.map((film: any) => [String(film.Id), film])
@@ -122,8 +82,8 @@ export async function GET() {
     if (!film) continue;
 
     if (!grouped.has(filmId)) {
-      const poster = await pickFirstWorkingImage(getPosterCandidates(film));
-      const backdrop = await pickFirstWorkingImage(getBackdropCandidates(film));
+      const posterCandidates = getPosterCandidates(film);
+      const backdropCandidates = getBackdropCandidates(film);
 
       grouped.set(filmId, {
         id: String(film.Id),
@@ -131,8 +91,10 @@ export async function GET() {
         rating: film.Rating || "",
         duration: film.Duration || 0,
         synopsis: film.Synopsis || "",
-        poster,
-        backdrop,
+        poster: posterCandidates[0] || "",
+        posterCandidates,
+        backdrop: backdropCandidates[0] || "",
+        backdropCandidates,
         trailer: film.FilmTrailerUrl || "",
         showtimes: [],
       });
