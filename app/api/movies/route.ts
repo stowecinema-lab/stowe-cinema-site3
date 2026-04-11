@@ -29,6 +29,11 @@ export async function GET() {
   const films: any[] = await filmsRes.json();
   const sessions: any[] = await sessionsRes.json();
 
+  const normalizeImageUrl = (url?: string) => {
+    if (!url) return "";
+    return url.replace(/^http:\/\//i, "https://");
+  };
+
   const filmMap = new Map<string, any>(
     films.map((film: any) => [String(film.Id), film])
   );
@@ -48,8 +53,16 @@ export async function GET() {
         rating: film.Rating || "",
         duration: film.Duration || 0,
         synopsis: film.Synopsis || "",
-        poster: film.FilmPosterUrl || film.FilmPosterThumbnailUrl || "",
-        backdrop: film.BackdropImageUrl || "",
+        poster: normalizeImageUrl(
+          film.FilmPosterUrl ||
+            film.FilmPosterThumbnailUrl ||
+            film.PosterUrl ||
+            film.PosterThumbnailUrl ||
+            ""
+        ),
+        backdrop: normalizeImageUrl(
+          film.BackdropImageUrl || film.BannerImageUrl || ""
+        ),
         trailer: film.FilmTrailerUrl || "",
         showtimes: [],
       });
