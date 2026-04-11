@@ -32,7 +32,9 @@ type Movie = {
   duration?: number;
   synopsis?: string;
   poster?: string;
+  posterCandidates?: string[];
   backdrop?: string;
+  backdropCandidates?: string[];
   trailer?: string;
   showtimes: Showtime[];
 };
@@ -49,7 +51,9 @@ const fallbackMovies: Movie[] = [
     synopsis:
       "This placeholder card is shown until your live Veezi feed is connected.",
     poster: "",
+    posterCandidates: [],
     backdrop: "",
+    backdropCandidates: [],
     trailer: "",
     showtimes: [
       {
@@ -63,68 +67,6 @@ const fallbackMovies: Movie[] = [
       {
         sessionId: 2,
         time: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
-        url: VEEZI_TICKETING_URL,
-        soldOut: false,
-        fewTicketsLeft: false,
-        format: "2D Digital",
-      },
-    ],
-  },
-  {
-    id: "fallback-2",
-    title: "Another Feature",
-    rating: "PG",
-    duration: 98,
-    synopsis: "Live posters, showtimes, and ticket links will load here from Veezi.",
-    poster: "",
-    backdrop: "",
-    trailer: "",
-    showtimes: [
-      {
-        sessionId: 3,
-        time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        url: VEEZI_TICKETING_URL,
-        soldOut: false,
-        fewTicketsLeft: false,
-        format: "2D Digital",
-      },
-    ],
-  },
-  {
-    id: "fallback-3",
-    title: "Late Night Feature",
-    rating: "R",
-    duration: 110,
-    synopsis:
-      "This layout is built so your Veezi movie feed can replace all placeholder content automatically.",
-    poster: "",
-    backdrop: "",
-    trailer: "",
-    showtimes: [
-      {
-        sessionId: 4,
-        time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        url: VEEZI_TICKETING_URL,
-        soldOut: false,
-        fewTicketsLeft: true,
-        format: "2D Digital",
-      },
-    ],
-  },
-  {
-    id: "fallback-4",
-    title: "Family Matinee",
-    rating: "PG",
-    duration: 102,
-    synopsis:
-      "Use this preview while deployment is happening, then swap to your live feed as soon as the token is added to Vercel.",
-    poster: "",
-    backdrop: "",
-    trailer: "",
-    showtimes: [
-      {
-        sessionId: 5,
-        time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         url: VEEZI_TICKETING_URL,
         soldOut: false,
         fewTicketsLeft: false,
@@ -238,16 +180,37 @@ function filterMoviesForDate(movies: Movie[], selectedDate: string) {
     .filter((movie) => movie.showtimes.length > 0);
 }
 
-function MoviePoster({ title, poster }: { title: string; poster?: string }) {
-  const [imgError, setImgError] = useState(false);
+function MoviePoster({
+  title,
+  poster,
+  posterCandidates = [],
+}: {
+  title: string;
+  poster?: string;
+  posterCandidates?: string[];
+}) {
+  const candidates = useMemo(() => {
+    const list = [poster || "", ...posterCandidates].filter(Boolean);
+    return Array.from(new Set(list));
+  }, [poster, posterCandidates]);
 
-  if (poster && !imgError) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [title, poster, posterCandidates]);
+
+  const currentPoster = candidates[currentIndex];
+
+  if (currentPoster) {
     return (
       <img
-        src={poster}
+        src={currentPoster}
         alt={title}
         className="h-full w-full object-cover"
-        onError={() => setImgError(true)}
+        onError={() => {
+          setCurrentIndex((prev) => prev + 1);
+        }}
       />
     );
   }
@@ -297,7 +260,14 @@ function MovieCard({ movie }: { movie: Movie }) {
   return (
     <div className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-white/20">
       <div className="relative aspect-[2/3] overflow-hidden">
-        <MoviePoster title={movie.title} poster={heroUrl} />
+        <MoviePoster
+          title={movie.title}
+          poster={heroUrl}
+          posterCandidates={[
+            ...(movie.posterCandidates || []),
+            ...(movie.backdropCandidates || []),
+          ]}
+        />
       </div>
 
       <div className="p-4">
