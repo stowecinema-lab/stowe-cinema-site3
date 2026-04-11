@@ -441,7 +441,7 @@ function DateSelector({
           </div>
         </div>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 hidden justify-center md:flex">
           <input
             ref={futureDateInputRef}
             type="date"
@@ -563,6 +563,11 @@ export default function Page() {
           </div>
           <div className="mt-2 text-sm uppercase tracking-[0.28em] text-[#86b7ff]">
             Select a date, then choose your movie and showtime
+          </div>
+
+          <div className="mx-auto mt-5 max-w-3xl rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm leading-6 text-white/75">
+            Movies begin at the advertised showtime. Trailers and previews play before
+            the listed start time.
           </div>
         </div>
 
