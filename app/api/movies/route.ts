@@ -1,18 +1,16 @@
 export async function GET() {
-  const veeziHeaders = {
+  const headers = {
     VeeziAccessToken: process.env.VEEZI_API_TOKEN || "",
     Accept: "application/json",
   };
 
-  const OMDB_API_KEY = process.env.OMDB_API_KEY || "";
-
   const [filmsRes, sessionsRes] = await Promise.all([
     fetch("https://api.useast.veezi.com/v4/film", {
-      headers: veeziHeaders,
+      headers,
       cache: "no-store",
     }),
     fetch("https://api.useast.veezi.com/v1/websession", {
-      headers: veeziHeaders,
+      headers,
       cache: "no-store",
     }),
   ]);
@@ -38,76 +36,6 @@ export async function GET() {
 
   const unique = (values: string[]) =>
     Array.from(new Set(values.filter(Boolean)));
-
-  const looksLikeImage = (contentType: string | null) => {
-    if (!contentType) return false;
-    return contentType.startsWith("image/");
-  };
-
-  const urlLoadsAsImage = async (url: string) => {
-    try {
-      let res = await fetch(url, {
-        method: "HEAD",
-        cache: "no-store",
-      });
-
-      let contentType = res.headers.get("content-type");
-
-      if (!res.ok || !looksLikeImage(contentType)) {
-        res = await fetch(url, {
-          cache: "no-store",
-        });
-        contentType = res.headers.get("content-type");
-      }
-
-      return res.ok && looksLikeImage(contentType);
-    } catch {
-      return false;
-    }
-  };
-
-  const extractYear = (film: any): string | undefined => {
-    const possible =
-      film.ReleaseDate ||
-      film.OpeningDate ||
-      film.ReleaseYear ||
-      film.Year ||
-      "";
-
-    if (!possible) return undefined;
-
-    const match = String(possible).match(/\b(19|20)\d{2}\b/);
-    return match ? match[0] : undefined;
-  };
-
-  const searchOmdbPoster = async (title: string, year?: string) => {
-    if (!OMDB_API_KEY || !title) return "";
-
-    try {
-      const params = new URLSearchParams({
-        apikey: OMDB_API_KEY,
-        t: title,
-      });
-
-      if (year) params.set("y", year);
-
-      const res = await fetch(`https://www.omdbapi.com/?${params.toString()}`, {
-        cache: "no-store",
-      });
-
-      if (!res.ok) return "";
-
-      const data = await res.json();
-
-      if (data && data.Poster && data.Poster !== "N/A") {
-        return data.Poster;
-      }
-
-      return "";
-    } catch {
-      return "";
-    }
-  };
 
   const getPosterCandidates = (film: any) =>
     unique(
@@ -157,33 +85,14 @@ export async function GET() {
       const posterCandidates = getPosterCandidates(film);
       const backdropCandidates = getBackdropCandidates(film);
 
-      const workingPosterCandidates: string[] = [];
-
-      for (const candidate of posterCandidates) {
-        if (await urlLoadsAsImage(candidate)) {
-          workingPosterCandidates.push(candidate);
-        }
-      }
-
-      if (workingPosterCandidates.length === 0) {
-        const omdbPoster = await searchOmdbPoster(
-          film.Title || "",
-          extractYear(film)
-        );
-
-        if (omdbPoster) {
-          workingPosterCandidates.push(omdbPoster);
-        }
-      }
-
       grouped.set(filmId, {
         id: String(film.Id),
         title: film.Title || "",
         rating: film.Rating || "",
         duration: film.Duration || 0,
         synopsis: film.Synopsis || "",
-        poster: workingPosterCandidates[0] || "",
-        posterCandidates: workingPosterCandidates,
+        poster: posterCandidates[0] || "",
+        posterCandidates,
         backdrop: backdropCandidates[0] || "",
         backdropCandidates,
         trailer: film.FilmTrailerUrl || "",
