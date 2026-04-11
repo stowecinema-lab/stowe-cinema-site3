@@ -239,8 +239,17 @@ function filterMoviesForDate(movies: Movie[], selectedDate: string) {
 }
 
 function MoviePoster({ title, poster }: { title: string; poster?: string }) {
-  if (poster) {
-    return <img src={poster} alt={title} className="h-full w-full object-cover" />;
+  const [imgError, setImgError] = useState(false);
+
+  if (poster && !imgError) {
+    return (
+      <img
+        src={poster}
+        alt={title}
+        className="h-full w-full object-cover"
+        onError={() => setImgError(true)}
+      />
+    );
   }
 
   return (
@@ -428,8 +437,8 @@ function DateSelector({
                     {isToday(date)
                       ? "Today"
                       : isTomorrow(date)
-                      ? "Tomorrow"
-                      : date.toLocaleDateString([], { weekday: "long" })}
+                        ? "Tomorrow"
+                        : date.toLocaleDateString([], { weekday: "long" })}
                   </div>
                 </button>
               );
