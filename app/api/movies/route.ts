@@ -29,9 +29,45 @@ export async function GET() {
   const films: any[] = await filmsRes.json();
   const sessions: any[] = await sessionsRes.json();
 
-  const normalizeImageUrl = (url?: string) => {
+  const normalizeUrl = (url?: string) => {
     if (!url) return "";
-    return url.replace(/^http:\/\//i, "https://");
+    return String(url).replace(/^http:\/\//i, "https://");
+  };
+
+  const pickPoster = (film: any) => {
+    const candidates = [
+      film.FilmPosterUrl,
+      film.FilmPosterThumbnailUrl,
+      film.PosterUrl,
+      film.PosterThumbnailUrl,
+      film.BackdropImageUrl,
+      film.BannerImageUrl,
+      film.ImageUrl,
+      film.ThumbnailUrl,
+      film?.Images?.Poster,
+      film?.Images?.PosterUrl,
+      film?.Images?.ThumbnailUrl,
+      film?.Media?.PosterUrl,
+      film?.Media?.ThumbnailUrl,
+    ]
+      .map(normalizeUrl)
+      .filter(Boolean);
+
+    return candidates[0] || "";
+  };
+
+  const pickBackdrop = (film: any) => {
+    const candidates = [
+      film.BackdropImageUrl,
+      film.BannerImageUrl,
+      film.FilmPosterUrl,
+      film.FilmPosterThumbnailUrl,
+      film.PosterUrl,
+    ]
+      .map(normalizeUrl)
+      .filter(Boolean);
+
+    return candidates[0] || "";
   };
 
   const filmMap = new Map<string, any>(
@@ -53,16 +89,8 @@ export async function GET() {
         rating: film.Rating || "",
         duration: film.Duration || 0,
         synopsis: film.Synopsis || "",
-        poster: normalizeImageUrl(
-          film.FilmPosterUrl ||
-            film.FilmPosterThumbnailUrl ||
-            film.PosterUrl ||
-            film.PosterThumbnailUrl ||
-            ""
-        ),
-        backdrop: normalizeImageUrl(
-          film.BackdropImageUrl || film.BannerImageUrl || ""
-        ),
+        poster: pickPoster(film),
+        backdrop: pickBackdrop(film),
         trailer: film.FilmTrailerUrl || "",
         showtimes: [],
       });
