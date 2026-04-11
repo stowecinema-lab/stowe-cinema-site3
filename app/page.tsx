@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -185,13 +185,6 @@ function normalizeDateKey(input: string | Date) {
 
 function isToday(date: Date) {
   return normalizeDateKey(date) === normalizeDateKey(new Date());
-}
-
-function formatShortMonthDay(date: Date) {
-  return date.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-  });
 }
 
 function getDateRange(days = 10) {
@@ -387,10 +380,14 @@ function DateSelector({
   dates,
   selectedDate,
   onSelect,
+  futureDateInputRef,
+  handleFutureDateSelect,
 }: {
   dates: Date[];
   selectedDate: string;
   onSelect: (dateKey: string) => void;
+  futureDateInputRef: React.RefObject<HTMLInputElement | null>;
+  handleFutureDateSelect: (value: string) => void;
 }) {
   return (
     <div className="mt-4">
@@ -445,7 +442,32 @@ function DateSelector({
         </div>
 
         <div className="mt-5 flex justify-center">
-          <button className="inline-flex items-center gap-2 border-2 border-yellow-400 px-6 py-3 font-semibold text-yellow-300 transition hover:bg-yellow-400/10">
+          <input
+            ref={futureDateInputRef}
+            type="date"
+            min={normalizeDateKey(new Date())}
+            value={selectedDate}
+            onChange={(e) => handleFutureDateSelect(e.target.value)}
+            className="sr-only"
+          />
+
+          <button
+            onClick={() => {
+              const input = futureDateInputRef.current;
+              if (!input) return;
+
+              const nativeInput = input as HTMLInputElement & {
+                showPicker?: () => void;
+              };
+
+              if (nativeInput.showPicker) {
+                nativeInput.showPicker();
+              } else {
+                input.click();
+              }
+            }}
+            className="inline-flex items-center gap-2 border-2 border-yellow-400 px-6 py-3 font-semibold text-yellow-300 transition hover:bg-yellow-400/10"
+          >
             <CalendarDays className="h-5 w-5" />
             Select Future Date
           </button>
@@ -460,6 +482,7 @@ export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState("home");
   const [selectedDate, setSelectedDate] = useState(normalizeDateKey(new Date()));
+  const futureDateInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -507,6 +530,13 @@ export default function Page() {
     }
   }, [groupedDays, selectedDayMovies.length]);
 
+  const handleFutureDateSelect = (value: string) => {
+    if (!value) return;
+    setActivePage("home");
+    setSelectedDate(value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const pageLinks = [
     { id: "home", label: "Home" },
     { id: "now-playing", label: "Now Playing" },
@@ -540,6 +570,8 @@ export default function Page() {
           dates={selectableDates}
           selectedDate={selectedDate}
           onSelect={setSelectedDate}
+          futureDateInputRef={futureDateInputRef}
+          handleFutureDateSelect={handleFutureDateSelect}
         />
 
         <div className="mt-8">
@@ -633,6 +665,8 @@ export default function Page() {
         dates={selectableDates}
         selectedDate={selectedDate}
         onSelect={setSelectedDate}
+        futureDateInputRef={futureDateInputRef}
+        handleFutureDateSelect={handleFutureDateSelect}
       />
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
