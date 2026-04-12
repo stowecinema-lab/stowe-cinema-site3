@@ -37,6 +37,12 @@ export async function GET() {
   const unique = (values: string[]) =>
     Array.from(new Set(values.filter(Boolean)));
 
+  const toProxyUrl = (url?: string) => {
+    const clean = normalizeUrl(url);
+    if (!clean) return "";
+    return `/api/poster?url=${encodeURIComponent(clean)}`;
+  };
+
   const getPosterCandidates = (film: any) =>
     unique(
       [
@@ -82,8 +88,11 @@ export async function GET() {
     if (!film) continue;
 
     if (!grouped.has(filmId)) {
-      const posterCandidates = getPosterCandidates(film);
-      const backdropCandidates = getBackdropCandidates(film);
+      const rawPosterCandidates = getPosterCandidates(film);
+      const rawBackdropCandidates = getBackdropCandidates(film);
+
+      const posterCandidates = rawPosterCandidates.map(toProxyUrl).filter(Boolean);
+      const backdropCandidates = rawBackdropCandidates.map(toProxyUrl).filter(Boolean);
 
       grouped.set(filmId, {
         id: String(film.Id),
