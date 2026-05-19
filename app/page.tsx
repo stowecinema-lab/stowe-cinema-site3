@@ -107,9 +107,22 @@ function formatShowtime(dateString: string) {
   }
 }
 
+function parseCalendarDate(input: string | Date) {
+  if (input instanceof Date) {
+    return new Date(input);
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    const [year, month, day] = input.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(input);
+}
+
 function formatLongDate(dateString: string) {
   try {
-    return new Date(dateString).toLocaleDateString([], {
+    return parseCalendarDate(dateString).toLocaleDateString([], {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -120,7 +133,7 @@ function formatLongDate(dateString: string) {
 }
 
 function normalizeDateKey(input: string | Date) {
-  const d = new Date(input);
+  const d = parseCalendarDate(input);
   d.setHours(0, 0, 0, 0);
   return d.toISOString().split("T")[0];
 }
