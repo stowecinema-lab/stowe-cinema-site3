@@ -502,13 +502,6 @@ export default function Page() {
     [movies, selectedDate]
   );
 
-  useEffect(() => {
-    if (selectedDayMovies.length === 0) {
-      const firstAvailableDate = Object.keys(groupedDays).sort()[0];
-      if (firstAvailableDate) setSelectedDate(firstAvailableDate);
-    }
-  }, [groupedDays, selectedDayMovies.length]);
-
   const handleFutureDateSelect = (value: string) => {
     if (!value) return;
     setActivePage("home");
@@ -573,7 +566,7 @@ export default function Page() {
 
           {selectedDayMovies.length === 0 ? (
             <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
-              No showtimes found for this date.
+              No showtimes on this date.
             </div>
           ) : null}
         </div>
@@ -658,6 +651,12 @@ export default function Page() {
           <MovieCard key={movie.id} movie={movie} />
         ))}
       </div>
+
+      {selectedDayMovies.length === 0 ? (
+        <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
+          No showtimes on this date.
+        </div>
+      ) : null}
     </section>
   );
 
