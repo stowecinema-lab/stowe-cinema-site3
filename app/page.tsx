@@ -83,12 +83,22 @@ const fallbackMovies: Movie[] = [
 
 function LogoMark() {
   return (
-    <div className="inline-flex items-center gap-3 rounded-full border border-[#7db3ff]/25 bg-[#77aef7]/15 px-4 py-2 text-white shadow-lg shadow-[#77aef7]/10 backdrop-blur">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9ec5ff]/35 bg-[#9ec5ff]/10">
+    <div className="inline-flex items-center gap-4 rounded-[24px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(15,24,39,0.96),rgba(7,12,22,0.92))] px-4 py-3 text-white shadow-xl shadow-black/25 backdrop-blur">
+      <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[16px] border border-[#9ec5ff]/30 bg-[linear-gradient(180deg,rgba(119,174,247,0.22),rgba(119,174,247,0.08))]">
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-[#b9d5ff]/80" />
         <Film className="h-5 w-5 text-[#dcecff]" />
+        <div className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.8)]" />
       </div>
-      <div className="text-2xl font-semibold uppercase tracking-[0.18em] text-white">
-        Stowe Cinema
+      <div className="flex flex-col leading-none">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#8fbfff]">
+          Vermont Movies
+        </span>
+        <span className="mt-1 text-[1.45rem] font-semibold tracking-[0.24em] text-white sm:text-[1.6rem]">
+          STOWE
+        </span>
+        <span className="mt-1 text-[0.72rem] font-medium uppercase tracking-[0.58em] text-white/68 sm:text-[0.78rem]">
+          CINEMA
+        </span>
       </div>
     </div>
   );
@@ -421,7 +431,7 @@ function AdvanceBanner({
                   Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
                 </div>
             <div className="mt-4 max-w-xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
-              Reserve seats early and view every posted advance showtime for this release.
+              Tickets are on sale now for this upcoming release.
             </div>
             <div className="mt-5 inline-flex items-center gap-3 rounded-2xl bg-[#77aef7] px-5 py-3 text-sm font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/20 transition group-hover:bg-[#90bdff]">
               View Advance Showtimes
@@ -565,32 +575,15 @@ function DateSelector({
         </div>
 
         <div className="mt-5 flex justify-center">
-          <input
-            ref={futureDateInputRef}
-            type="date"
-            min={normalizeDateKey(new Date())}
-            value={selectedDate}
-            onChange={(e) => handleFutureDateSelect(e.target.value)}
-            className="sr-only"
-          />
-
-          <button
-            onClick={() => {
-              const input = futureDateInputRef.current;
-              if (!input) return;
-
-              const nativeInput = input as HTMLInputElement & {
-                showPicker?: () => void;
-              };
-
-              if (nativeInput.showPicker) {
-                nativeInput.showPicker();
-              } else {
-                input.click();
-              }
-            }}
-            className="inline-flex w-full max-w-md items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white md:w-auto md:min-w-[320px]"
-          >
+          <label className="relative inline-flex w-full max-w-md cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white md:w-auto md:min-w-[320px]">
+            <input
+              ref={futureDateInputRef}
+              type="date"
+              min={normalizeDateKey(new Date())}
+              value={selectedDate}
+              onChange={(e) => handleFutureDateSelect(e.target.value)}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9ec5ff]/30 bg-[#77aef7]/12 text-[#9fc4ff]">
               <CalendarDays className="h-5 w-5" />
             </span>
@@ -600,7 +593,7 @@ function DateSelector({
               </span>
               <span>Select Future Showtimes</span>
             </span>
-          </button>
+          </label>
         </div>
       </div>
     </div>
@@ -708,7 +701,7 @@ export default function Page() {
             <SectionHeading
               eyebrow="Upcoming releases"
               title="Advance tickets on sale now."
-              text="Promote upcoming movies with their real theatrical art and send guests straight to that movie’s advance showtimes."
+              text="Be first in line for upcoming releases and reserve seats before opening weekend."
             />
             <div className="mt-6 grid gap-5">
               {advanceMovies.slice(0, 3).map((movie) => (
@@ -1237,3 +1230,4 @@ export default function Page() {
     </div>
   );
 }
+
