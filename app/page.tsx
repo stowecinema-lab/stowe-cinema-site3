@@ -417,9 +417,9 @@ function AdvanceBanner({
             <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
               {movie.title}
             </div>
-            <div className="mt-3 text-sm uppercase tracking-[0.24em] text-white/65 md:text-base">
-              Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
-            </div>
+                <div className="mt-3 text-sm uppercase tracking-[0.24em] text-white/65 md:text-base">
+                  Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
+                </div>
             <div className="mt-4 max-w-xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
               Reserve seats early and view every posted advance showtime for this release.
             </div>
@@ -564,7 +564,7 @@ function DateSelector({
           </div>
         </div>
 
-        <div className="mt-5 hidden justify-center md:flex">
+        <div className="mt-5 flex justify-center">
           <input
             ref={futureDateInputRef}
             type="date"
@@ -589,10 +589,17 @@ function DateSelector({
                 input.click();
               }
             }}
-            className="inline-flex items-center gap-2 border-2 border-yellow-400 px-6 py-3 font-semibold text-yellow-300 transition hover:bg-yellow-400/10"
+            className="inline-flex w-full max-w-md items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white md:w-auto md:min-w-[320px]"
           >
-            <CalendarDays className="h-5 w-5" />
-            Select Future Date
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9ec5ff]/30 bg-[#77aef7]/12 text-[#9fc4ff]">
+              <CalendarDays className="h-5 w-5" />
+            </span>
+            <span className="flex flex-col items-start text-left md:items-center md:text-center">
+              <span className="text-[11px] tracking-[0.28em] text-white/55">
+                Need a later date?
+              </span>
+              <span>Select Future Showtimes</span>
+            </span>
           </button>
         </div>
       </div>
@@ -1220,8 +1227,8 @@ export default function Page() {
         <div className="mx-auto max-w-7xl px-6 py-12 text-center">
           <div className="text-2xl font-semibold text-white">Stowe Cinema</div>
           <div className="mt-4 text-white/70">454 Mountain Road, Stowe, VT</div>
-          <div className="mt-2 text-white/70">802-585-3195</div>
-          <div className="mt-2 text-white/70">stowecinema@gmail.com</div>
+          <div className="mt-2 text-white/70">📞 802-585-3195</div>
+          <div className="mt-2 text-white/70">✉️ stowecinema@gmail.com</div>
           <div className="mt-6 text-sm text-white/40">
             © {new Date().getFullYear()} Stowe Cinema. All rights reserved.
           </div>
