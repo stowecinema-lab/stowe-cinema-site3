@@ -39,6 +39,10 @@ type Movie = {
   showtimes: Showtime[];
 };
 
+type AdvanceBannerMovie = Movie & {
+  firstShowtime: Showtime;
+};
+
 const VEEZI_TICKETING_URL =
   "https://ticketing.useast.veezi.com/sessions/?siteToken=vj2rd320rz8shtsprx8110dk9g";
 
@@ -168,6 +172,48 @@ function isTomorrow(date: Date) {
   tomorrow.setHours(0, 0, 0, 0);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return normalizeDateKey(date) === normalizeDateKey(tomorrow);
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function isAdvanceMovie(movie: Movie) {
+  const firstShowtime = movie.showtimes[0];
+  if (!firstShowtime) return false;
+  return parseCalendarDate(firstShowtime.time).getTime() > startOfToday().getTime();
+}
+
+function getAdvanceMovies(movies: Movie[]) {
+  return movies
+    .filter((movie) => movie.showtimes.length > 0)
+    .map((movie) => ({
+      ...movie,
+      firstShowtime: movie.showtimes
+        .slice()
+        .sort(
+          (a, b) =>
+            parseCalendarDate(a.time).getTime() -
+            parseCalendarDate(b.time).getTime()
+        )[0],
+    }))
+    .filter((movie) => movie.firstShowtime && isAdvanceMovie(movie))
+    .sort(
+      (a, b) =>
+        parseCalendarDate(a.firstShowtime.time).getTime() -
+        parseCalendarDate(b.firstShowtime.time).getTime()
+    );
+}
+
+function groupShowtimesByDay(shows: Showtime[]) {
+  return shows.reduce<Record<string, Showtime[]>>((acc, show) => {
+    const key = normalizeDateKey(show.time);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(show);
+    return acc;
+  }, {});
 }
 
 function groupByDay(movies: Movie[]) {
@@ -323,6 +369,62 @@ function MovieCard({ movie }: { movie: Movie }) {
         )}
       </div>
     </div>
+  );
+}
+
+function AdvanceBanner({
+  movie,
+  onOpen,
+}: {
+  movie: AdvanceBannerMovie;
+  onOpen: (movie: AdvanceBannerMovie) => void;
+}) {
+  const bannerImage = movie.backdrop || movie.poster;
+
+  return (
+    <button
+      onClick={() => onOpen(movie)}
+      className="group relative w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#111827] text-left shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-white/20"
+    >
+      <div className="relative min-h-[220px] md:min-h-[280px]">
+        {bannerImage ? (
+          <img
+            src={bannerImage}
+            alt={`${movie.title} advance tickets`}
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.92)_0%,rgba(6,11,19,0.72)_48%,rgba(6,11,19,0.28)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,196,71,0.12),transparent_45%,rgba(6,11,19,0.35))]" />
+
+        <div className="relative z-10 flex h-full flex-col justify-between p-5 md:p-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200">
+              Advance Tickets
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+              On Sale Now
+            </span>
+          </div>
+
+          <div className="max-w-2xl">
+            <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              {movie.title}
+            </div>
+            <div className="mt-3 text-sm uppercase tracking-[0.24em] text-white/65 md:text-base">
+              First showtime {formatLongDate(movie.firstShowtime.time)}
+            </div>
+            <div className="mt-4 max-w-xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
+              Reserve seats early and view every posted advance showtime for this release.
+            </div>
+            <div className="mt-5 inline-flex items-center gap-3 rounded-2xl bg-[#77aef7] px-5 py-3 text-sm font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/20 transition group-hover:bg-[#90bdff]">
+              View Advance Showtimes
+              <ChevronRight className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -497,6 +599,7 @@ export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState("home");
   const [selectedDate, setSelectedDate] = useState(normalizeDateKey(new Date()));
+  const [selectedAdvanceMovieId, setSelectedAdvanceMovieId] = useState<string | null>(null);
   const futureDateInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -532,11 +635,25 @@ export default function Page() {
   }, []);
 
   const groupedDays = useMemo(() => groupByDay(movies), [movies]);
+  const advanceMovies = useMemo(() => getAdvanceMovies(movies), [movies]);
   const selectableDates = useMemo(() => getDateRange(10), []);
   const selectedDayMovies = useMemo(
     () => filterMoviesForDate(movies, selectedDate),
     [movies, selectedDate]
   );
+  const selectedAdvanceMovie = useMemo(
+    () =>
+      advanceMovies.find((movie) => movie.id === selectedAdvanceMovieId) ||
+      advanceMovies[0] ||
+      null,
+    [advanceMovies, selectedAdvanceMovieId]
+  );
+
+  useEffect(() => {
+    if (!selectedAdvanceMovieId && advanceMovies[0]) {
+      setSelectedAdvanceMovieId(advanceMovies[0].id);
+    }
+  }, [advanceMovies, selectedAdvanceMovieId]);
 
   const handleFutureDateSelect = (value: string) => {
     if (!value) return;
@@ -545,8 +662,16 @@ export default function Page() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openAdvanceMovie = (movie: AdvanceBannerMovie) => {
+    setSelectedAdvanceMovieId(movie.id);
+    setSelectedDate(normalizeDateKey(movie.firstShowtime.time));
+    setActivePage("advance-tickets");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const pageLinks = [
     { id: "home", label: "Home" },
+    { id: "advance-tickets", label: "Advance Tickets" },
     { id: "now-playing", label: "Now Playing" },
     { id: "showtimes", label: "Showtimes" },
     { id: "private-events", label: "Private Events" },
@@ -565,6 +690,25 @@ export default function Page() {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
+        {advanceMovies.length > 0 ? (
+          <div className="mb-10">
+            <SectionHeading
+              eyebrow="Upcoming releases"
+              title="Advance tickets on sale now."
+              text="Promote upcoming movies with their real theatrical art and send guests straight to that movie’s advance showtimes."
+            />
+            <div className="mt-6 grid gap-5">
+              {advanceMovies.slice(0, 3).map((movie) => (
+                <AdvanceBanner
+                  key={movie.id}
+                  movie={movie}
+                  onOpen={openAdvanceMovie}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mb-6 text-center">
           <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
             Showtimes
@@ -695,6 +839,121 @@ export default function Page() {
       ) : null}
     </section>
   );
+
+  const AdvanceTicketsPage = () => {
+    if (!selectedAdvanceMovie) {
+      return (
+        <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+          <SectionHeading
+            eyebrow="Advance Tickets"
+            title="No advance titles are posted right now."
+            text="As soon as an upcoming release has advance tickets available, it can appear here as a promotional banner."
+          />
+        </section>
+      );
+    }
+
+    const groupedAdvanceShowtimes = Object.entries(
+      groupShowtimesByDay(selectedAdvanceMovie.showtimes)
+    ).sort(([a], [b]) => a.localeCompare(b));
+    const heroImage = selectedAdvanceMovie.backdrop || selectedAdvanceMovie.poster;
+
+    return (
+      <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+        <div className="mb-6 flex flex-wrap gap-3">
+          {advanceMovies.map((movie) => (
+            <button
+              key={movie.id}
+              onClick={() => openAdvanceMovie(movie)}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                movie.id === selectedAdvanceMovie.id
+                  ? "border-amber-300/40 bg-amber-300/15 text-amber-200"
+                  : "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white"
+              }`}
+            >
+              {movie.title}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/30">
+          <div className="relative min-h-[280px] md:min-h-[360px]">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt={`${selectedAdvanceMovie.title} advance tickets`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : null}
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.95)_0%,rgba(6,11,19,0.72)_50%,rgba(6,11,19,0.32)_100%)]" />
+            <div className="relative z-10 flex h-full flex-col justify-end p-6 md:p-10">
+              <div className="max-w-3xl">
+                <div className="mb-4 flex flex-wrap gap-3">
+                  <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200">
+                    Advance Tickets
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                    On Sale Now
+                  </span>
+                </div>
+                <h1 className="text-4xl font-semibold tracking-tight text-white md:text-6xl">
+                  {selectedAdvanceMovie.title}
+                </h1>
+                <div className="mt-3 text-sm uppercase tracking-[0.24em] text-white/65 md:text-base">
+                  First showtime {formatLongDate(selectedAdvanceMovie.firstShowtime.time)}
+                </div>
+                {selectedAdvanceMovie.synopsis ? (
+                  <p className="mt-5 max-w-2xl text-sm leading-7 text-white/78 md:text-base">
+                    {selectedAdvanceMovie.synopsis}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <SectionHeading
+            eyebrow="Advance Showtimes"
+            title="Pick your date and lock in seats early."
+            text="Every currently posted advance showtime for this movie appears below."
+          />
+          <div className="mt-8 grid gap-6">
+            {groupedAdvanceShowtimes.map(([day, shows]) => (
+              <div
+                key={day}
+                className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
+              >
+                <div className="text-xl font-semibold text-white">
+                  {formatLongDate(day)}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {shows
+                    .slice()
+                    .sort(
+                      (a, b) =>
+                        parseCalendarDate(a.time).getTime() -
+                        parseCalendarDate(b.time).getTime()
+                    )
+                    .map((show) => (
+                      <a
+                        key={String(show.sessionId)}
+                        href={show.url || VEEZI_TICKETING_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-semibold text-white/90 transition hover:border-[#77aef7]/40 hover:bg-[#77aef7] hover:text-[#09111e]"
+                      >
+                        {formatShowtime(show.time)}
+                      </a>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   const ShowtimesPage = () => (
     <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
@@ -872,6 +1131,8 @@ export default function Page() {
     switch (activePage) {
       case "now-playing":
         return <NowPlayingPage />;
+      case "advance-tickets":
+        return <AdvanceTicketsPage />;
       case "showtimes":
         return <ShowtimesPage />;
       case "private-events":
