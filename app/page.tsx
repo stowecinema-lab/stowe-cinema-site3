@@ -83,20 +83,15 @@ const fallbackMovies: Movie[] = [
 
 function LogoMark() {
   return (
-    <div className="inline-flex items-center gap-4 rounded-[24px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(15,24,39,0.96),rgba(7,12,22,0.92))] px-4 py-3 text-white shadow-xl shadow-black/25 backdrop-blur">
-      <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[16px] border border-[#9ec5ff]/30 bg-[linear-gradient(180deg,rgba(119,174,247,0.22),rgba(119,174,247,0.08))]">
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-[#b9d5ff]/80" />
+    <div className="inline-flex items-center gap-3 rounded-[20px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(14,22,36,0.94),rgba(7,12,22,0.9))] px-4 py-3 text-white shadow-lg shadow-black/25 backdrop-blur">
+      <div className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#9ec5ff]/28 bg-[linear-gradient(180deg,rgba(119,174,247,0.2),rgba(119,174,247,0.06))]">
         <Film className="h-5 w-5 text-[#dcecff]" />
-        <div className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.8)]" />
       </div>
       <div className="flex flex-col leading-none">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#8fbfff]">
-          Vermont Movies
-        </span>
-        <span className="mt-1 text-[1.45rem] font-semibold tracking-[0.24em] text-white sm:text-[1.6rem]">
+        <span className="text-[1.2rem] font-semibold uppercase tracking-[0.28em] text-white sm:text-[1.35rem]">
           STOWE
         </span>
-        <span className="mt-1 text-[0.72rem] font-medium uppercase tracking-[0.58em] text-white/68 sm:text-[0.78rem]">
+        <span className="mt-1 text-[0.68rem] font-medium uppercase tracking-[0.52em] text-[#9fc4ff] sm:text-[0.72rem]">
           CINEMA
         </span>
       </div>
@@ -575,7 +570,7 @@ function DateSelector({
         </div>
 
         <div className="mt-5 flex justify-center">
-          <label className="relative inline-flex w-full max-w-md cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white md:w-auto md:min-w-[320px]">
+          <label className="relative inline-flex w-full max-w-md cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white md:hidden">
             <input
               ref={futureDateInputRef}
               type="date"
@@ -594,6 +589,45 @@ function DateSelector({
               <span>Select Future Showtimes</span>
             </span>
           </label>
+
+          <div className="hidden md:flex">
+            <input
+              ref={futureDateInputRef}
+              type="date"
+              min={normalizeDateKey(new Date())}
+              value={selectedDate}
+              onChange={(e) => handleFutureDateSelect(e.target.value)}
+              className="sr-only"
+            />
+
+            <button
+              onClick={() => {
+                const input = futureDateInputRef.current;
+                if (!input) return;
+
+                const nativeInput = input as HTMLInputElement & {
+                  showPicker?: () => void;
+                };
+
+                if (nativeInput.showPicker) {
+                  nativeInput.showPicker();
+                } else {
+                  input.click();
+                }
+              }}
+              className="inline-flex min-w-[320px] items-center justify-center gap-3 rounded-2xl border border-[#7db3ff]/25 bg-[linear-gradient(135deg,rgba(20,33,53,0.96),rgba(10,18,32,0.96))] px-6 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-[#d7e7ff] shadow-lg shadow-black/20 transition hover:border-[#9fc4ff]/45 hover:bg-[linear-gradient(135deg,rgba(28,46,72,0.98),rgba(13,23,39,0.98))] hover:text-white"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#9ec5ff]/30 bg-[#77aef7]/12 text-[#9fc4ff]">
+                <CalendarDays className="h-5 w-5" />
+              </span>
+              <span className="flex flex-col items-center text-center">
+                <span className="text-[11px] tracking-[0.28em] text-white/55">
+                  Need a later date?
+                </span>
+                <span>Select Future Showtimes</span>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
