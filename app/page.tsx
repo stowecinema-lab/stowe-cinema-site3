@@ -10,6 +10,7 @@ import {
   MapPin,
   Menu,
   PartyPopper,
+  Play,
   Sparkles,
   Ticket,
   X,
@@ -351,7 +352,22 @@ function MovieCard({ movie }: { movie: Movie }) {
                 .join(" • ")}
             </div>
           </div>
-          <Ticket className="mt-1 h-5 w-5 text-[#9fc4ff]" />
+          <div className="mt-1 flex items-center gap-2">
+            {hasTrailer ? (
+              <a
+                href={movie.trailer}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Watch trailer for ${movie.title}`}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/78 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
+              >
+                <Play className="ml-0.5 h-4 w-4" />
+              </a>
+            ) : null}
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#9fc4ff]/22 bg-[#77aef7]/10">
+              <Ticket className="h-4 w-4 text-[#9fc4ff]" />
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -368,16 +384,6 @@ function MovieCard({ movie }: { movie: Movie }) {
             <div className="mt-2 text-center text-xs text-white/50">
               Tap a showtime above to book that specific show.
             </div>
-            {hasTrailer ? (
-              <a
-                href={movie.trailer}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/85 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
-              >
-                Watch Trailer
-              </a>
-            ) : null}
           </div>
         ) : (
           <div className="mt-4 grid gap-3">
@@ -389,16 +395,6 @@ function MovieCard({ movie }: { movie: Movie }) {
             >
               Buy Tickets
             </a>
-            {hasTrailer ? (
-              <a
-                href={movie.trailer}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/85 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
-              >
-                Watch Trailer
-              </a>
-            ) : null}
           </div>
         )}
       </div>
