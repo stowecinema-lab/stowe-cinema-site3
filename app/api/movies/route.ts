@@ -31,7 +31,7 @@ export async function GET() {
 
   const normalizeUrl = (url?: string) => {
     if (!url) return "";
-    return String(url).replace(/^http:\/\//i, "https://").trim();
+    return String(url).trim();
   };
 
   const unique = (values: string[]) =>
@@ -91,14 +91,19 @@ export async function GET() {
       const rawPosterCandidates = getPosterCandidates(film);
       const rawBackdropCandidates = getBackdropCandidates(film);
 
-      const posterCandidates = rawPosterCandidates.map(toProxyUrl).filter(Boolean);
-      const backdropCandidates = rawBackdropCandidates.map(toProxyUrl).filter(Boolean);
+      const posterCandidates = unique(
+        rawPosterCandidates.map(toProxyUrl).filter(Boolean)
+      );
+      const backdropCandidates = unique(
+        rawBackdropCandidates.map(toProxyUrl).filter(Boolean)
+      );
 
       grouped.set(filmId, {
         id: String(film.Id),
         title: film.Title || "",
         rating: film.Rating || "",
         duration: film.Duration || 0,
+        openingDate: film.OpeningDate || "",
         synopsis: film.Synopsis || "",
         poster: posterCandidates[0] || "",
         posterCandidates,
