@@ -326,6 +326,7 @@ function MovieCard({ movie }: { movie: Movie }) {
   const firstValidUrl =
     movie.showtimes.find((s) => s.url)?.url || VEEZI_TICKETING_URL;
   const hasMultipleShowtimes = movie.showtimes.length > 1;
+  const hasTrailer = Boolean(movie.trailer);
 
   return (
     <div className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-white/20">
@@ -367,16 +368,38 @@ function MovieCard({ movie }: { movie: Movie }) {
             <div className="mt-2 text-center text-xs text-white/50">
               Tap a showtime above to book that specific show.
             </div>
+            {hasTrailer ? (
+              <a
+                href={movie.trailer}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/85 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
+              >
+                Watch Trailer
+              </a>
+            ) : null}
           </div>
         ) : (
-          <a
-            href={firstValidUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 block w-full rounded-xl bg-[#77aef7] px-4 py-3 text-center text-sm font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
-          >
-            Buy Tickets
-          </a>
+          <div className="mt-4 grid gap-3">
+            <a
+              href={firstValidUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-xl bg-[#77aef7] px-4 py-3 text-center text-sm font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
+            >
+              Buy Tickets
+            </a>
+            {hasTrailer ? (
+              <a
+                href={movie.trailer}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/85 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
+              >
+                Watch Trailer
+              </a>
+            ) : null}
+          </div>
         )}
       </div>
     </div>
