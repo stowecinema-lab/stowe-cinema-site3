@@ -414,7 +414,7 @@ function ShowtimeChip({ show }: { show: Showtime }) {
       href={show.url || VEEZI_TICKETING_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="rounded-xl border border-[#77aef7]/30 bg-[#77aef7]/12 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#77aef7] hover:text-[#09111e] hover:shadow-lg hover:shadow-[#77aef7]/20"
+      className="rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-3 py-2 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition-all duration-200 hover:scale-105 hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30"
     >
       {formatShowtime(show.time)}
       {low ? " - Few Left" : ""}
@@ -546,122 +546,66 @@ function MovieCardSkeleton() {
   );
 }
 
-function FeaturedMovieHero({
-  movie,
-  onOpenDetails,
-  onOpenTrailer,
+function TheaterIntro({
+  nextShowtime,
   onViewShowtimes,
 }: {
-  movie: Movie | null;
-  onOpenDetails: (movie: Movie) => void;
-  onOpenTrailer: (movie: Movie) => void;
+  nextShowtime?: { movie: Movie; show: Showtime };
   onViewShowtimes: () => void;
 }) {
-  if (!movie) {
-    return (
-      <section className="relative min-h-[520px] overflow-hidden border-b border-white/10 bg-[#08101b]">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,#111827,#050812)]" />
-        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-7xl items-end px-6 py-10">
-          <div className="max-w-3xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#9fc4ff]">
-              Stowe Cinema
-            </div>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white md:text-7xl">
-              Movie nights start here.
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/72">
-              Live showtimes are loading. Check back in a moment for the latest schedule.
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const nextShowtime = getNextAvailableShowtime(movie);
-  const heroImage = movie.backdrop || movie.poster;
-  const status = getMovieStatus(movie);
-
   return (
-    <section className="relative min-h-[620px] overflow-hidden border-b border-white/10 bg-[#08101b]">
-      {heroImage ? (
-        <img
-          src={heroImage}
-          alt={movie.title}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      ) : null}
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,8,14,0.96)_0%,rgba(5,8,14,0.74)_48%,rgba(5,8,14,0.25)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,14,0.12),rgba(5,8,14,0.96))]" />
-
-      <div className="relative z-10 mx-auto grid min-h-[620px] max-w-7xl items-end gap-8 px-6 py-10 md:grid-cols-[minmax(0,1fr)_240px] md:py-14">
-        <div className="max-w-4xl">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-[#77aef7]/35 bg-[#77aef7]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#cfe3ff]">
-              {status}
-            </span>
-            {nextShowtime ? (
-              <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
-                Next {formatShowtime(nextShowtime.time)}
-              </span>
-            ) : null}
+    <section className="border-b border-white/10 bg-[linear-gradient(135deg,#0d1624,#07101c_62%,#111827)]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1fr_auto] md:items-end md:py-14">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#77aef7]/25 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[#b9d7ff]">
+            <Film className="h-3.5 w-3.5" />
+            Stowe Cinema
           </div>
-          <h1 className="mt-5 text-5xl font-semibold tracking-tight text-white md:text-7xl">
-            {movie.title}
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white md:text-6xl">
+            Showtimes, tickets, and movie nights in Stowe.
           </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-white/65">
-            {[movie.rating, formatRuntime(movie.duration)].filter(Boolean).join(" / ")}
-          </div>
-          {movie.synopsis ? (
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/76 md:text-lg">
-              {movie.synopsis}
-            </p>
-          ) : null}
+          <p className="mt-4 max-w-2xl text-base leading-7 text-white/72 md:text-lg">
+            Check today&apos;s schedule, choose a showtime, and buy tickets online.
+          </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            {nextShowtime ? (
-              <a
-                href={nextShowtime.url || VEEZI_TICKETING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/25 transition hover:bg-[#90bdff]"
-              >
-                <Ticket className="h-4 w-4" />
-                Buy Tickets
-              </a>
-            ) : null}
             <button
               onClick={onViewShowtimes}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/20 transition hover:bg-[#90bdff]"
             >
               <Clock3 className="h-4 w-4" />
-              View Showtimes
+              View Today&apos;s Showtimes
             </button>
-            {movie.trailer ? (
-              <button
-                onClick={() => onOpenTrailer(movie)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
-              >
-                <Play className="h-4 w-4" />
-                Trailer
-              </button>
-            ) : null}
+            <a
+              href={VEEZI_TICKETING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
+            >
+              <Ticket className="h-4 w-4" />
+              Buy Tickets
+            </a>
           </div>
         </div>
 
-        <button
-          onClick={() => onOpenDetails(movie)}
-          className="hidden overflow-hidden rounded-[8px] border border-white/15 shadow-2xl shadow-black/50 transition hover:-translate-y-1 hover:border-[#77aef7]/40 md:block"
-          aria-label={`View details for ${movie.title}`}
-        >
-          <MoviePoster
-            title={movie.title}
-            poster={movie.poster || movie.backdrop}
-            posterCandidates={[
-              ...(movie.posterCandidates || []),
-              ...(movie.backdropCandidates || []),
-            ]}
-          />
-        </button>
+        <div className="rounded-[8px] border border-white/10 bg-black/20 p-5 md:min-w-[300px]">
+          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9fc4ff]">
+            Next Showtime
+          </div>
+          {nextShowtime ? (
+            <>
+              <div className="mt-3 text-xl font-semibold text-white">
+                {nextShowtime.movie.title}
+              </div>
+              <div className="mt-1 text-sm text-white/58">
+                {formatShowtime(nextShowtime.show.time)}
+              </div>
+            </>
+          ) : (
+            <div className="mt-3 text-sm leading-6 text-white/62">
+              Live showtimes are loading. The schedule appears below as soon as it is ready.
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -675,13 +619,14 @@ function AdvanceBanner({
   onOpen: (movie: AdvanceBannerMovie) => void;
 }) {
   const bannerImage = movie.backdrop || movie.poster;
+  const posterImage = movie.poster || movie.backdrop;
 
   return (
     <button
       onClick={() => onOpen(movie)}
-      className="group relative w-full overflow-hidden rounded-[28px] border border-white/10 bg-[#111827] text-left shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-white/20"
+      className="group relative w-full overflow-hidden rounded-[8px] border border-amber-300/20 bg-[#101723] text-left shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-amber-200/45"
     >
-      <div className="relative min-h-[220px] md:min-h-[280px]">
+      <div className="relative min-h-[260px] md:min-h-[320px]">
         {bannerImage ? (
           <img
             src={bannerImage}
@@ -689,31 +634,44 @@ function AdvanceBanner({
             className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
           />
         ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.92)_0%,rgba(6,11,19,0.72)_48%,rgba(6,11,19,0.28)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,196,71,0.12),transparent_45%,rgba(6,11,19,0.35))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.96)_0%,rgba(6,11,19,0.82)_48%,rgba(6,11,19,0.35)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,196,71,0.16),transparent_45%,rgba(6,11,19,0.6))]" />
 
-        <div className="relative z-10 flex h-full flex-col justify-between p-5 md:p-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200">
-              Advance Tickets
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
-              On Sale Now
-            </span>
+        <div className="relative z-10 grid min-h-[260px] gap-5 p-5 md:min-h-[320px] md:grid-cols-[150px_1fr] md:p-6">
+          <div className="hidden overflow-hidden rounded-[8px] border border-white/12 shadow-xl shadow-black/40 md:block">
+            <MoviePoster
+              title={movie.title}
+              poster={posterImage}
+              posterCandidates={[
+                ...(movie.posterCandidates || []),
+                ...(movie.backdropCandidates || []),
+              ]}
+            />
           </div>
 
-          <div className="max-w-2xl">
-            <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
-              {movie.title}
+          <div className="flex max-w-2xl flex-col justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-200">
+                  Advance Tickets
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+                  On Sale Now
+                </span>
+              </div>
+              <div className="mt-5 text-3xl font-semibold tracking-tight text-white md:text-5xl">
+                {movie.title}
+              </div>
+              <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/28 px-3 py-1 text-sm font-semibold uppercase tracking-[0.18em] text-white/72">
+                Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
+              </div>
+              <div className="mt-4 max-w-xl text-sm leading-6 text-white/78 md:text-base md:leading-7">
+                Reserve seats early for this upcoming release.
+              </div>
             </div>
-                <div className="mt-3 text-sm uppercase tracking-[0.24em] text-white/65 md:text-base">
-                  Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
-                </div>
-            <div className="mt-4 max-w-xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
-              Tickets are on sale now for this upcoming release.
-            </div>
-            <div className="mt-5 inline-flex items-center gap-3 rounded-2xl bg-[#77aef7] px-5 py-3 text-sm font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/20 transition group-hover:bg-[#90bdff]">
-              View Advance Showtimes
+
+            <div className="mt-6 inline-flex w-fit items-center gap-3 rounded-2xl bg-amber-300 px-5 py-3 text-sm font-semibold text-[#171006] shadow-lg shadow-amber-300/20 transition group-hover:bg-amber-200">
+              See Advance Showtimes
               <ChevronRight className="h-4 w-4" />
             </div>
           </div>
@@ -1022,15 +980,6 @@ export default function Page() {
     () => movies.find((movie) => movie.id === selectedMovieId) || null,
     [movies, selectedMovieId]
   );
-  const featuredMovie = useMemo(() => {
-    return (
-      selectedDayMovies.find((movie) => getNextAvailableShowtime(movie)) ||
-      selectedDayMovies[0] ||
-      movies.find((movie) => getNextAvailableShowtime(movie)) ||
-      movies[0] ||
-      null
-    );
-  }, [movies, selectedDayMovies]);
   const nextAvailableShowtime = useMemo(() => {
     return selectedDayMovies
       .flatMap((movie) =>
@@ -1082,10 +1031,8 @@ export default function Page() {
 
   const HomePage = () => (
     <>
-      <FeaturedMovieHero
-        movie={loadingMovies ? null : featuredMovie}
-        onOpenDetails={openMovieDetails}
-        onOpenTrailer={setTrailerMovie}
+      <TheaterIntro
+        nextShowtime={nextAvailableShowtime}
         onViewShowtimes={() => {
           setActivePage("home");
           window.requestAnimationFrame(() => {
@@ -1099,12 +1046,24 @@ export default function Page() {
 
       <section id="showtimes" className="mx-auto max-w-7xl px-6 py-8 md:py-10">
         {advanceMovies.length > 0 ? (
-          <div className="mb-10">
-            <SectionHeading
-              eyebrow="Upcoming releases"
-              title="Advance tickets on sale now."
-              text="Reserve seats early for upcoming releases before opening weekend arrives."
-            />
+          <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <SectionHeading
+                eyebrow="Upcoming releases"
+                title="Advance tickets on sale now."
+                text="Reserve seats early for upcoming releases before opening weekend arrives."
+              />
+              <button
+                onClick={() => {
+                  setActivePage("advance-tickets");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="inline-flex w-fit items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-300 hover:text-[#171006]"
+              >
+                View All Advance Tickets
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
             <div className="mt-6 flex snap-x gap-5 overflow-x-auto pb-3">
               {advanceMovies.slice(0, 3).map((movie) => (
                 <div key={movie.id} className="min-w-full snap-center md:min-w-[72%] lg:min-w-[58%]">
@@ -1370,7 +1329,7 @@ export default function Page() {
                         href={show.url || VEEZI_TICKETING_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-semibold text-white/90 transition hover:border-[#77aef7]/40 hover:bg-[#77aef7] hover:text-[#09111e]"
+                        className="rounded-2xl border border-[#a8ccff]/70 bg-[#77aef7] px-4 py-3 text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30"
                       >
                         {formatShowtime(show.time)}
                       </a>
@@ -1570,7 +1529,7 @@ export default function Page() {
                           href={show.url || VEEZI_TICKETING_URL}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-xl bg-[#77aef7] px-4 py-2 text-center text-sm font-semibold text-[#09111e]"
+                          className="rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-4 py-2 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition hover:bg-[#a8ccff]"
                         >
                           Buy Tickets
                         </a>
