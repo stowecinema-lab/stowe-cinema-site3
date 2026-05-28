@@ -1354,25 +1354,53 @@ export default function Page() {
                 {formatLongDate(day)}
               </div>
               <div className="mt-4 grid gap-3">
-                {shows.map((show) => (
-                  <div
-                    key={String(show.sessionId)}
-                    className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 md:flex-row md:items-center"
-                  >
-                    <div>
-                      <div className="text-lg font-medium text-white">{show.movieTitle}</div>
-                      <div className="mt-1 text-sm text-white/55">{formatShowtime(show.time)}</div>
-                    </div>
-                    <a
-                      href={show.url || VEEZI_TICKETING_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl bg-[#77aef7] px-4 py-2 text-sm font-semibold text-[#09111e]"
+                {shows.map((show) => {
+                  const past = isPastShowtime(show);
+
+                  return (
+                    <div
+                      key={String(show.sessionId)}
+                      className={`flex flex-col justify-between gap-4 rounded-2xl border px-4 py-4 md:flex-row md:items-center ${
+                        past
+                          ? "border-white/5 bg-white/[0.03] text-white/40"
+                          : "border-white/10 bg-black/20 text-white"
+                      }`}
                     >
-                      Buy Tickets
-                    </a>
-                  </div>
-                ))}
+                      <div>
+                        <div
+                          className={`text-lg font-medium ${
+                            past ? "text-white/40" : "text-white"
+                          }`}
+                        >
+                          {show.movieTitle}
+                        </div>
+                        <div
+                          className={`mt-1 text-sm ${
+                            past
+                              ? "text-white/35 line-through"
+                              : "text-white/55"
+                          }`}
+                        >
+                          {formatShowtime(show.time)}
+                        </div>
+                      </div>
+                      {past ? (
+                        <span className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-center text-sm font-semibold text-white/35">
+                          Showtime Passed
+                        </span>
+                      ) : (
+                        <a
+                          href={show.url || VEEZI_TICKETING_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-xl bg-[#77aef7] px-4 py-2 text-center text-sm font-semibold text-[#09111e]"
+                        >
+                          Buy Tickets
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
