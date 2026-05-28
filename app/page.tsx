@@ -8,9 +8,11 @@ import {
   ChevronRight,
   Clock3,
   Film,
+  Mail,
   MapPin,
   Menu,
   PartyPopper,
+  Phone,
   Play,
   Sparkles,
   Ticket,
@@ -276,6 +278,42 @@ function isPastShowtime(show: Showtime) {
   return new Date(show.time).getTime() < Date.now();
 }
 
+function getNextAvailableShowtime(movie: Movie) {
+  return movie.showtimes
+    .filter((show) => !isPastShowtime(show) && !show.soldOut)
+    .sort(
+      (a, b) =>
+        parseCalendarDate(a.time).getTime() - parseCalendarDate(b.time).getTime()
+    )[0];
+}
+
+function getMovieStatus(movie: Movie) {
+  if (isAdvanceMovie(movie)) return "Advance Tickets";
+  if (movie.showtimes.some((show) => show.fewTicketsLeft && !isPastShowtime(show))) {
+    return "Few Tickets Left";
+  }
+  if (movie.showtimes.length > 0 && movie.showtimes.every((show) => show.soldOut)) {
+    return "Sold Out";
+  }
+  if (movie.showtimes.length > 0 && movie.showtimes.every(isPastShowtime)) {
+    return "Showtime Passed";
+  }
+  return "Now Playing";
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[#77aef7]/25 bg-[#77aef7]/10 text-[#9fc4ff]">
+        <CalendarDays className="h-5 w-5" />
+      </div>
+      <div className="mx-auto mt-4 max-w-xl text-base leading-7 text-white/72">
+        {message}
+      </div>
+    </div>
+  );
+}
+
 function getTrailerEmbedUrl(url?: string) {
   if (!url) return "";
 
@@ -357,8 +395,16 @@ function ShowtimeChip({ show }: { show: Showtime }) {
 
   if (past) {
     return (
-      <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm text-white/35 line-through">
+      <span className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white/35 line-through">
         {formatShowtime(show.time)}
+      </span>
+    );
+  }
+
+  if (soldOut) {
+    return (
+      <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/40">
+        {formatShowtime(show.time)} - Sold Out
       </span>
     );
   }
@@ -368,14 +414,10 @@ function ShowtimeChip({ show }: { show: Showtime }) {
       href={show.url || VEEZI_TICKETING_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`rounded-full border px-3 py-1.5 text-sm transition-all duration-200 ${
-        soldOut
-          ? "cursor-default border-white/10 bg-white/5 text-white/40"
-          : "border-white/10 bg-white/5 text-white/90 hover:scale-105 hover:bg-[#77aef7] hover:text-[#09111e] hover:shadow-lg hover:shadow-[#77aef7]/20"
-      }`}
+      className="rounded-xl border border-[#77aef7]/30 bg-[#77aef7]/12 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#77aef7] hover:text-[#09111e] hover:shadow-lg hover:shadow-[#77aef7]/20"
     >
       {formatShowtime(show.time)}
-      {soldOut ? " · Sold Out" : low ? " · Few Left" : ""}
+      {low ? " - Few Left" : ""}
     </a>
   );
 }
@@ -390,10 +432,9 @@ function MovieCard({
   onOpenTrailer: (movie: Movie) => void;
 }) {
   const heroUrl = movie.poster || movie.backdrop;
-  const availableShowtimes = movie.showtimes.filter(
-    (show) => !isPastShowtime(show)
-  );
+  const availableShowtimes = movie.showtimes.filter((show) => !isPastShowtime(show));
   const hasAvailableShowtimes = availableShowtimes.length > 0;
+  const status = getMovieStatus(movie);
   const firstValidUrl =
     availableShowtimes.find((s) => s.url)?.url ||
     movie.showtimes.find((s) => s.url)?.url ||
@@ -402,7 +443,7 @@ function MovieCard({
   const hasTrailer = Boolean(movie.trailer);
 
   return (
-    <div className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-white/20">
+    <div className="group overflow-hidden rounded-[8px] border border-white/10 bg-[#101723] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-[#77aef7]/35">
       <button
         onClick={() => onOpenDetails(movie)}
         className="relative block aspect-[2/3] w-full overflow-hidden text-left"
@@ -416,21 +457,24 @@ function MovieCard({
             ...(movie.backdropCandidates || []),
           ]}
         />
+        <div className="absolute left-3 top-3 rounded-full border border-black/20 bg-black/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+          {status}
+        </div>
       </button>
 
-      <div className="p-4">
+      <div className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <button
               onClick={() => onOpenDetails(movie)}
-              className="text-left text-lg font-semibold text-white transition hover:text-[#9fc4ff]"
+              className="text-left text-xl font-semibold leading-tight text-white transition hover:text-[#9fc4ff]"
             >
               {movie.title}
             </button>
             <div className="mt-1 text-sm text-white/60">
               {[movie.rating, formatRuntime(movie.duration)]
                 .filter(Boolean)
-                .join(" • ")}
+                .join(" / ")}
             </div>
           </div>
           <div className="mt-1 flex items-center gap-2">
@@ -449,7 +493,7 @@ function MovieCard({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 grid grid-cols-2 gap-2">
           {movie.showtimes.slice(0, 8).map((show) => (
             <ShowtimeChip key={String(show.sessionId)} show={show} />
           ))}
@@ -457,7 +501,7 @@ function MovieCard({
 
         {!hasAvailableShowtimes ? (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-semibold text-white/45">
-            Showtimes have passed
+            All showtimes have passed
           </div>
         ) : hasMultipleShowtimes ? (
           <div className="mt-4">
@@ -499,6 +543,127 @@ function MovieCardSkeleton() {
         <div className="h-11 animate-pulse rounded-xl bg-white/[0.06]" />
       </div>
     </div>
+  );
+}
+
+function FeaturedMovieHero({
+  movie,
+  onOpenDetails,
+  onOpenTrailer,
+  onViewShowtimes,
+}: {
+  movie: Movie | null;
+  onOpenDetails: (movie: Movie) => void;
+  onOpenTrailer: (movie: Movie) => void;
+  onViewShowtimes: () => void;
+}) {
+  if (!movie) {
+    return (
+      <section className="relative min-h-[520px] overflow-hidden border-b border-white/10 bg-[#08101b]">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,#111827,#050812)]" />
+        <div className="relative z-10 mx-auto flex min-h-[520px] max-w-7xl items-end px-6 py-10">
+          <div className="max-w-3xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.3em] text-[#9fc4ff]">
+              Stowe Cinema
+            </div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white md:text-7xl">
+              Movie nights start here.
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/72">
+              Live showtimes are loading. Check back in a moment for the latest schedule.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const nextShowtime = getNextAvailableShowtime(movie);
+  const heroImage = movie.backdrop || movie.poster;
+  const status = getMovieStatus(movie);
+
+  return (
+    <section className="relative min-h-[620px] overflow-hidden border-b border-white/10 bg-[#08101b]">
+      {heroImage ? (
+        <img
+          src={heroImage}
+          alt={movie.title}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : null}
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,8,14,0.96)_0%,rgba(5,8,14,0.74)_48%,rgba(5,8,14,0.25)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,14,0.12),rgba(5,8,14,0.96))]" />
+
+      <div className="relative z-10 mx-auto grid min-h-[620px] max-w-7xl items-end gap-8 px-6 py-10 md:grid-cols-[minmax(0,1fr)_240px] md:py-14">
+        <div className="max-w-4xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-[#77aef7]/35 bg-[#77aef7]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#cfe3ff]">
+              {status}
+            </span>
+            {nextShowtime ? (
+              <span className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+                Next {formatShowtime(nextShowtime.time)}
+              </span>
+            ) : null}
+          </div>
+          <h1 className="mt-5 text-5xl font-semibold tracking-tight text-white md:text-7xl">
+            {movie.title}
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-white/65">
+            {[movie.rating, formatRuntime(movie.duration)].filter(Boolean).join(" / ")}
+          </div>
+          {movie.synopsis ? (
+            <p className="mt-5 max-w-2xl text-base leading-8 text-white/76 md:text-lg">
+              {movie.synopsis}
+            </p>
+          ) : null}
+          <div className="mt-7 flex flex-wrap gap-3">
+            {nextShowtime ? (
+              <a
+                href={nextShowtime.url || VEEZI_TICKETING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/25 transition hover:bg-[#90bdff]"
+              >
+                <Ticket className="h-4 w-4" />
+                Buy Tickets
+              </a>
+            ) : null}
+            <button
+              onClick={onViewShowtimes}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
+            >
+              <Clock3 className="h-4 w-4" />
+              View Showtimes
+            </button>
+            {movie.trailer ? (
+              <button
+                onClick={() => onOpenTrailer(movie)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
+              >
+                <Play className="h-4 w-4" />
+                Trailer
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          onClick={() => onOpenDetails(movie)}
+          className="hidden overflow-hidden rounded-[8px] border border-white/15 shadow-2xl shadow-black/50 transition hover:-translate-y-1 hover:border-[#77aef7]/40 md:block"
+          aria-label={`View details for ${movie.title}`}
+        >
+          <MoviePoster
+            title={movie.title}
+            poster={movie.poster || movie.backdrop}
+            posterCandidates={[
+              ...(movie.posterCandidates || []),
+              ...(movie.backdropCandidates || []),
+            ]}
+          />
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -771,7 +936,7 @@ function QuickDateFilters({
   ];
 
   return (
-    <div className="mt-5 flex flex-wrap justify-center gap-2">
+    <div className="sticky top-[88px] z-30 -mx-6 mt-5 flex justify-center gap-2 overflow-x-auto border-y border-white/10 bg-[#060b13]/92 px-6 py-3 backdrop-blur md:static md:mx-0 md:flex-wrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-0">
       {options.map((option) => {
         const key = normalizeDateKey(option.date);
         const active = selectedDate === key;
@@ -780,7 +945,7 @@ function QuickDateFilters({
           <button
             key={option.label}
             onClick={() => onSelect(key)}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+            className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
               active
                 ? "border-[#77aef7]/45 bg-[#77aef7] text-[#09111e]"
                 : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:text-white"
@@ -857,6 +1022,15 @@ export default function Page() {
     () => movies.find((movie) => movie.id === selectedMovieId) || null,
     [movies, selectedMovieId]
   );
+  const featuredMovie = useMemo(() => {
+    return (
+      selectedDayMovies.find((movie) => getNextAvailableShowtime(movie)) ||
+      selectedDayMovies[0] ||
+      movies.find((movie) => getNextAvailableShowtime(movie)) ||
+      movies[0] ||
+      null
+    );
+  }, [movies, selectedDayMovies]);
   const nextAvailableShowtime = useMemo(() => {
     return selectedDayMovies
       .flatMap((movie) =>
@@ -908,20 +1082,27 @@ export default function Page() {
 
   const HomePage = () => (
     <>
-      <section className="border-b border-white/10 bg-[#08101b]">
-        <div className="mx-auto max-w-7xl px-6 py-5">
-          <div className="inline-flex items-center rounded-full border border-[#7db3ff]/20 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.3em] text-[#a9cdff]">
-            Now Playing in Stowe
-          </div>
-        </div>
-      </section>
+      <FeaturedMovieHero
+        movie={loadingMovies ? null : featuredMovie}
+        onOpenDetails={openMovieDetails}
+        onOpenTrailer={setTrailerMovie}
+        onViewShowtimes={() => {
+          setActivePage("home");
+          window.requestAnimationFrame(() => {
+            document.getElementById("showtimes")?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          });
+        }}
+      />
 
-      <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
+      <section id="showtimes" className="mx-auto max-w-7xl px-6 py-8 md:py-10">
         {advanceMovies.length > 0 ? (
           <div className="mb-10">
-          <SectionHeading
-            eyebrow="Upcoming releases"
-            title="Advance tickets on sale now."
+            <SectionHeading
+              eyebrow="Upcoming releases"
+              title="Advance tickets on sale now."
               text="Reserve seats early for upcoming releases before opening weekend arrives."
             />
             <div className="mt-6 flex snap-x gap-5 overflow-x-auto pb-3">
@@ -984,9 +1165,7 @@ export default function Page() {
           </div>
 
           {!loadingMovies && selectedDayMovies.length === 0 ? (
-            <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
-              No showtimes on this date.
-            </div>
+            <EmptyState message="Nothing is scheduled for this date yet. Try another day or check back soon for newly added showtimes." />
           ) : null}
         </div>
 
@@ -1083,9 +1262,7 @@ export default function Page() {
       </div>
 
       {!loadingMovies && selectedDayMovies.length === 0 ? (
-        <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
-          No showtimes on this date.
-        </div>
+        <EmptyState message="Nothing is scheduled for this date yet. Try another day or check back soon for newly added showtimes." />
       ) : null}
     </section>
   );
@@ -1684,11 +1861,25 @@ export default function Page() {
       <footer className="border-t border-white/10 bg-[#08101b]">
         <div className="mx-auto max-w-7xl px-6 py-12 text-center">
           <div className="text-2xl font-semibold text-white">Stowe Cinema</div>
-          <div className="mt-4 text-white/70">454 Mountain Road, Stowe, VT</div>
-          <div className="mt-2 text-white/70">📞 802-585-3195</div>
-          <div className="mt-2 text-white/70">✉️ stowecinema@gmail.com</div>
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 text-white/70 sm:flex-row sm:gap-6">
+            <div className="inline-flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-[#9fc4ff]" />
+              454 Mountain Road, Stowe, VT
+            </div>
+            <a href="tel:8025853195" className="inline-flex items-center gap-2 transition hover:text-white">
+              <Phone className="h-4 w-4 text-[#9fc4ff]" />
+              802-585-3195
+            </a>
+            <a
+              href="mailto:stowecinema@gmail.com"
+              className="inline-flex items-center gap-2 transition hover:text-white"
+            >
+              <Mail className="h-4 w-4 text-[#9fc4ff]" />
+              stowecinema@gmail.com
+            </a>
+          </div>
           <div className="mt-6 text-sm text-white/40">
-            © {new Date().getFullYear()} Stowe Cinema. All rights reserved.
+            &copy; {new Date().getFullYear()} Stowe Cinema. All rights reserved.
           </div>
         </div>
       </footer>
