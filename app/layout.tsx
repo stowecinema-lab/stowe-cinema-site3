@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Stowe Cinema',
-  description: 'Luxury movie theater website for Stowe Cinema with live showtimes.',
+  description: 'See what is playing at Stowe Cinema, check live showtimes, and buy tickets online.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
