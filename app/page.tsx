@@ -56,7 +56,7 @@ const fallbackMovies: Movie[] = [
     rating: "PG-13",
     duration: 122,
     synopsis:
-      "This placeholder card is shown until your live Veezi feed is connected.",
+      "Showtimes are loading. Please check back in a moment for the latest schedule.",
     poster: "",
     posterCandidates: [],
     backdrop: "",
@@ -83,9 +83,14 @@ const fallbackMovies: Movie[] = [
   },
 ];
 
-function LogoMark() {
+function LogoMark({ onClick }: { onClick?: () => void }) {
   return (
-    <div className="inline-flex items-center gap-3 rounded-[20px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(14,22,36,0.94),rgba(7,12,22,0.9))] px-4 py-3 text-white shadow-lg shadow-black/25 backdrop-blur">
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-3 rounded-[20px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(14,22,36,0.94),rgba(7,12,22,0.9))] px-4 py-3 text-left text-white shadow-lg shadow-black/25 backdrop-blur transition hover:border-[#9fc4ff]/35 hover:bg-[linear-gradient(135deg,rgba(18,29,47,0.96),rgba(8,14,25,0.94))]"
+      aria-label="Go to Stowe Cinema home"
+    >
       <div className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#9ec5ff]/28 bg-[linear-gradient(180deg,rgba(119,174,247,0.2),rgba(119,174,247,0.06))]">
         <Film className="h-5 w-5 text-[#dcecff]" />
       </div>
@@ -97,7 +102,7 @@ function LogoMark() {
           CINEMA
         </span>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -179,9 +184,13 @@ function getUpcomingWeekendDate() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const day = today.getDay();
-  const friday = 5;
-  let offset = (friday - day + 7) % 7;
-  if (offset === 0 && today.getDay() > friday) offset = 7;
+
+  if (day === 0) {
+    return today;
+  }
+
+  const saturday = 6;
+  const offset = (saturday - day + 7) % 7;
   today.setDate(today.getDate() + offset);
   return today;
 }
@@ -910,10 +919,10 @@ export default function Page() {
       <section className="mx-auto max-w-7xl px-6 py-8 md:py-10">
         {advanceMovies.length > 0 ? (
           <div className="mb-10">
-            <SectionHeading
-              eyebrow="Upcoming releases"
-              title="Advance tickets on sale now."
-              text="Be first in line for upcoming releases and reserve seats before opening weekend."
+          <SectionHeading
+            eyebrow="Upcoming releases"
+            title="Advance tickets on sale now."
+              text="Reserve seats early for upcoming releases before opening weekend arrives."
             />
             <div className="mt-6 flex snap-x gap-5 overflow-x-auto pb-3">
               {advanceMovies.slice(0, 3).map((movie) => (
@@ -1088,7 +1097,7 @@ export default function Page() {
           <SectionHeading
             eyebrow="Advance Tickets"
             title="No advance titles are posted right now."
-            text="As soon as an upcoming release has advance tickets available, it can appear here as a promotional banner."
+            text="Check back soon for upcoming releases with advance tickets available."
           />
         </section>
       );
@@ -1159,7 +1168,7 @@ export default function Page() {
           <SectionHeading
             eyebrow="Advance Showtimes"
             title="Pick your date and lock in seats early."
-            text="Every currently posted advance showtime for this movie appears below."
+            text="Choose an available advance showtime below and reserve seats online."
           />
           <div className="mt-8 grid gap-6">
             {groupedAdvanceShowtimes.map(([day, shows]) => (
@@ -1298,7 +1307,7 @@ export default function Page() {
           <SectionHeading
             eyebrow="Showtimes"
             title="All posted showtimes."
-            text="Passed showtimes stay visible in gray so guests can still see the full movie lineup for the day."
+            text="Choose an available showtime below to continue to ticket checkout."
           />
           <div className="mt-8 grid gap-6">
             {groupedMovieShowtimes.map(([day, shows]) => (
@@ -1333,8 +1342,8 @@ export default function Page() {
     <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
       <SectionHeading
         eyebrow="Showtimes"
-        title="A full schedule page built for fast checkout."
-        text="Grouped by day, clean on mobile, and focused on getting people into checkout quickly."
+        title="Browse the full Stowe Cinema schedule."
+        text="Find showtimes by day and choose a movie to buy tickets online."
       />
       <div className="mt-10 grid gap-6">
         {Object.entries(groupedDays)
@@ -1376,7 +1385,7 @@ export default function Page() {
       <SectionHeading
         eyebrow="Private Events"
         title="Private screenings, parties, and unforgettable group nights."
-        text="Host your next birthday party, company outing, fundraiser, sports watch event, or special celebration at Stowe Cinema."
+        text="Bring your group to Stowe Cinema for birthdays, company outings, fundraisers, sports watch events, and special celebrations."
       />
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         <InfoCard
@@ -1445,7 +1454,7 @@ export default function Page() {
     <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
       <SectionHeading
         eyebrow="Contact & Visit"
-        title="Everything guests need to find you quickly."
+        title="Plan your visit to Stowe Cinema."
         text="Visit us in the heart of Stowe for first-run movies, great concessions, and a full cocktail bar."
       />
 
@@ -1487,13 +1496,13 @@ export default function Page() {
               the right place.
             </p>
             <p>
-              At Stowe Cinema we show first-run movies with a full concession stand and
-              a full cocktail bar. We offer the best popcorn in town, made with canola
-              oil and served with real butter.
+              Stowe Cinema shows first-run movies with a full concession stand and
+              a full cocktail bar. Enjoy popcorn made with canola oil and served
+              with real butter.
             </p>
             <p>
-              Stowe Cinema has been located in Stowe since 1972. Let us put our
-              experience to work and entertain you for the night.
+              Stowe Cinema has been located in Stowe since 1972, welcoming locals
+              and visitors for relaxed nights at the movies.
             </p>
           </div>
         </div>
@@ -1528,7 +1537,13 @@ export default function Page() {
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#08101b]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <LogoMark />
+          <LogoMark
+            onClick={() => {
+              setActivePage("home");
+              setMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
 
           <nav className="hidden items-center gap-6 text-sm text-white/75 lg:flex">
             {pageLinks.map((item) => (
