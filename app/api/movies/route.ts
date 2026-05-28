@@ -4,8 +4,12 @@ export async function GET() {
     Accept: "application/json",
   };
 
-  const [filmsRes, sessionsRes] = await Promise.all([
+  const [filmsRes, sessionsRes, webSessionsRes] = await Promise.all([
     fetch("https://api.useast.veezi.com/v4/film", {
+      headers,
+      cache: "no-store",
+    }),
+    fetch("https://api.useast.veezi.com/v1/session", {
       headers,
       cache: "no-store",
     }),
@@ -15,12 +19,13 @@ export async function GET() {
     }),
   ]);
 
-  if (!filmsRes.ok || !sessionsRes.ok) {
+  if (!filmsRes.ok || !sessionsRes.ok || !webSessionsRes.ok) {
     return new Response(
       JSON.stringify({
         error: "Failed to load Veezi data",
         filmStatus: filmsRes.status,
         sessionStatus: sessionsRes.status,
+        webSessionStatus: webSessionsRes.status,
       }),
       { status: 500 }
     );
@@ -28,6 +33,7 @@ export async function GET() {
 
   const films: any[] = await filmsRes.json();
   const sessions: any[] = await sessionsRes.json();
+  const webSessions: any[] = await webSessionsRes.json();
 
   const normalizeUrl = (url?: string) => {
     if (!url) return "";
@@ -78,25 +84,33 @@ export async function GET() {
   const filmMap = new Map<string, any>(
     films.map((film: any) => [String(film.Id), film])
   );
+  const webSessionUrlById = new Map(
+    webSessions.map((session: any) => [
+      String(session.Id),
+      session.URL || session.Url || session.url || "",
+    ])
+  );
 
   const grouped = new Map<string, any>();
 
   for (const session of sessions) {
+    const showType = String(session.ShowType || "").toLowerCase();
+    const status = String(session.Status || "").toLowerCase();
+    if (showType && showType !== "public") continue;
+    if (status && status !== "open") continue;
+
     const filmId = String(session.FilmId);
     const film = filmMap.get(filmId);
+    const sessionTime = session.FeatureStartTime || session.PreShowStartTime;
 
-    if (!film) continue;
+    if (!film || !sessionTime) continue;
 
     if (!grouped.has(filmId)) {
       const rawPosterCandidates = getPosterCandidates(film);
       const rawBackdropCandidates = getBackdropCandidates(film);
 
-      const posterCandidates = unique(
-        rawPosterCandidates.map(toProxyUrl).filter(Boolean)
-      );
-      const backdropCandidates = unique(
-        rawBackdropCandidates.map(toProxyUrl).filter(Boolean)
-      );
+      const posterCandidates = unique(rawPosterCandidates.map(toProxyUrl).filter(Boolean));
+      const backdropCandidates = unique(rawBackdropCandidates.map(toProxyUrl).filter(Boolean));
 
       grouped.set(filmId, {
         id: String(film.Id),
@@ -116,8 +130,13 @@ export async function GET() {
 
     grouped.get(filmId).showtimes.push({
       sessionId: String(session.Id),
-      time: session.FeatureStartTime || session.PreShowStartTime,
-      url: session.URL || session.Url || session.url || "",
+      time: sessionTime,
+      url:
+        webSessionUrlById.get(String(session.Id)) ||
+        session.URL ||
+        session.Url ||
+        session.url ||
+        "",
       soldOut: !!session.TicketsSoldOut,
       fewTicketsLeft: !!session.FewTicketsLeft,
       format: session.FilmFormat || "",
