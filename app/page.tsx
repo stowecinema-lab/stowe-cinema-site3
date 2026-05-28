@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Film,
   MapPin,
   Menu,
@@ -174,6 +175,17 @@ function getNextWeekday(targetDay: number) {
   return date;
 }
 
+function getUpcomingWeekendDate() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const day = today.getDay();
+  const friday = 5;
+  let offset = (friday - day + 7) % 7;
+  if (offset === 0 && today.getDay() > friday) offset = 7;
+  today.setDate(today.getDate() + offset);
+  return today;
+}
+
 function isTomorrow(date: Date) {
   const tomorrow = new Date();
   tomorrow.setHours(0, 0, 0, 0);
@@ -253,6 +265,30 @@ function filterMoviesForDate(movies: Movie[], selectedDate: string) {
 
 function isPastShowtime(show: Showtime) {
   return new Date(show.time).getTime() < Date.now();
+}
+
+function getTrailerEmbedUrl(url?: string) {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.replace("/", "");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    }
+    if (parsed.hostname.includes("vimeo.com")) {
+      const videoId = parsed.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : url;
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
 }
 
 function MoviePoster({
@@ -335,7 +371,15 @@ function ShowtimeChip({ show }: { show: Showtime }) {
   );
 }
 
-function MovieCard({ movie }: { movie: Movie }) {
+function MovieCard({
+  movie,
+  onOpenDetails,
+  onOpenTrailer,
+}: {
+  movie: Movie;
+  onOpenDetails: (movie: Movie) => void;
+  onOpenTrailer: (movie: Movie) => void;
+}) {
   const heroUrl = movie.poster || movie.backdrop;
   const availableShowtimes = movie.showtimes.filter(
     (show) => !isPastShowtime(show)
@@ -350,7 +394,11 @@ function MovieCard({ movie }: { movie: Movie }) {
 
   return (
     <div className="group overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-white/20">
-      <div className="relative aspect-[2/3] overflow-hidden">
+      <button
+        onClick={() => onOpenDetails(movie)}
+        className="relative block aspect-[2/3] w-full overflow-hidden text-left"
+        aria-label={`View details for ${movie.title}`}
+      >
         <MoviePoster
           title={movie.title}
           poster={heroUrl}
@@ -359,12 +407,17 @@ function MovieCard({ movie }: { movie: Movie }) {
             ...(movie.backdropCandidates || []),
           ]}
         />
-      </div>
+      </button>
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold text-white">{movie.title}</div>
+            <button
+              onClick={() => onOpenDetails(movie)}
+              className="text-left text-lg font-semibold text-white transition hover:text-[#9fc4ff]"
+            >
+              {movie.title}
+            </button>
             <div className="mt-1 text-sm text-white/60">
               {[movie.rating, formatRuntime(movie.duration)]
                 .filter(Boolean)
@@ -373,15 +426,13 @@ function MovieCard({ movie }: { movie: Movie }) {
           </div>
           <div className="mt-1 flex items-center gap-2">
             {hasTrailer ? (
-              <a
-                href={movie.trailer}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => onOpenTrailer(movie)}
                 aria-label={`Watch trailer for ${movie.title}`}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/78 transition hover:border-[#9fc4ff]/35 hover:bg-white/10 hover:text-white"
               >
                 <Play className="ml-0.5 h-4 w-4" />
-              </a>
+              </button>
             ) : null}
             <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#9fc4ff]/22 bg-[#77aef7]/10">
               <Ticket className="h-4 w-4 text-[#9fc4ff]" />
@@ -420,6 +471,23 @@ function MovieCard({ movie }: { movie: Movie }) {
             </a>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function MovieCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/20">
+      <div className="aspect-[2/3] animate-pulse bg-white/[0.06]" />
+      <div className="space-y-4 p-4">
+        <div className="h-5 w-3/4 animate-pulse rounded-full bg-white/[0.08]" />
+        <div className="h-4 w-1/2 animate-pulse rounded-full bg-white/[0.06]" />
+        <div className="flex gap-2">
+          <div className="h-8 w-16 animate-pulse rounded-full bg-white/[0.06]" />
+          <div className="h-8 w-16 animate-pulse rounded-full bg-white/[0.06]" />
+        </div>
+        <div className="h-11 animate-pulse rounded-xl bg-white/[0.06]" />
       </div>
     </div>
   );
@@ -676,12 +744,56 @@ function DateSelector({
   );
 }
 
+function QuickDateFilters({
+  selectedDate,
+  onSelect,
+}: {
+  selectedDate: string;
+  onSelect: (dateKey: string) => void;
+}) {
+  const options = [
+    { label: "Today", date: new Date() },
+    { label: "Tomorrow", date: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 1);
+      return date;
+    })() },
+    { label: "Weekend", date: getUpcomingWeekendDate() },
+  ];
+
+  return (
+    <div className="mt-5 flex flex-wrap justify-center gap-2">
+      {options.map((option) => {
+        const key = normalizeDateKey(option.date);
+        const active = selectedDate === key;
+
+        return (
+          <button
+            key={option.label}
+            onClick={() => onSelect(key)}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              active
+                ? "border-[#77aef7]/45 bg-[#77aef7] text-[#09111e]"
+                : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:text-white"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Page() {
-  const [movies, setMovies] = useState<Movie[]>(fallbackMovies);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loadingMovies, setLoadingMovies] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState("home");
   const [selectedDate, setSelectedDate] = useState(normalizeDateKey(new Date()));
   const [selectedAdvanceMovieId, setSelectedAdvanceMovieId] = useState<string | null>(null);
+  const [selectedMovieId, setSelectedMovieId] = useState<string | null>(null);
+  const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
   const futureDateInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -706,7 +818,9 @@ export default function Page() {
           setMovies(patched);
         }
       } catch {
-        // keep fallback
+        setMovies(fallbackMovies);
+      } finally {
+        if (active) setLoadingMovies(false);
       }
     }
 
@@ -730,6 +844,22 @@ export default function Page() {
       null,
     [advanceMovies, selectedAdvanceMovieId]
   );
+  const selectedMovie = useMemo(
+    () => movies.find((movie) => movie.id === selectedMovieId) || null,
+    [movies, selectedMovieId]
+  );
+  const nextAvailableShowtime = useMemo(() => {
+    return selectedDayMovies
+      .flatMap((movie) =>
+        movie.showtimes.map((show) => ({ movie, show }))
+      )
+      .filter(({ show }) => !isPastShowtime(show))
+      .sort(
+        (a, b) =>
+          parseCalendarDate(a.show.time).getTime() -
+          parseCalendarDate(b.show.time).getTime()
+      )[0];
+  }, [selectedDayMovies]);
 
   useEffect(() => {
     if (!selectedAdvanceMovieId && advanceMovies[0]) {
@@ -748,6 +878,12 @@ export default function Page() {
     setSelectedAdvanceMovieId(movie.id);
     setSelectedDate(normalizeDateKey(movie.firstShowtime.time));
     setActivePage("advance-tickets");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openMovieDetails = (movie: Movie) => {
+    setSelectedMovieId(movie.id);
+    setActivePage("movie-details");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -779,13 +915,14 @@ export default function Page() {
               title="Advance tickets on sale now."
               text="Be first in line for upcoming releases and reserve seats before opening weekend."
             />
-            <div className="mt-6 grid gap-5">
+            <div className="mt-6 flex snap-x gap-5 overflow-x-auto pb-3">
               {advanceMovies.slice(0, 3).map((movie) => (
-                <AdvanceBanner
-                  key={movie.id}
-                  movie={movie}
-                  onOpen={openAdvanceMovie}
-                />
+                <div key={movie.id} className="min-w-full snap-center md:min-w-[72%] lg:min-w-[58%]">
+                  <AdvanceBanner
+                    movie={movie}
+                    onOpen={openAdvanceMovie}
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -805,6 +942,8 @@ export default function Page() {
           </div>
         </div>
 
+        <QuickDateFilters selectedDate={selectedDate} onSelect={setSelectedDate} />
+
         <DateSelector
           dates={selectableDates}
           selectedDate={selectedDate}
@@ -821,12 +960,21 @@ export default function Page() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {selectedDayMovies.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
+            {loadingMovies
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <MovieCardSkeleton key={index} />
+                ))
+              : selectedDayMovies.map((movie) => (
+                  <MovieCard
+                    key={movie.id}
+                    movie={movie}
+                    onOpenDetails={openMovieDetails}
+                    onOpenTrailer={setTrailerMovie}
+                  />
+                ))}
           </div>
 
-          {selectedDayMovies.length === 0 ? (
+          {!loadingMovies && selectedDayMovies.length === 0 ? (
             <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
               No showtimes on this date.
             </div>
@@ -900,6 +1048,8 @@ export default function Page() {
         Now Playing
       </div>
 
+      <QuickDateFilters selectedDate={selectedDate} onSelect={setSelectedDate} />
+
       <DateSelector
         dates={selectableDates}
         selectedDate={selectedDate}
@@ -909,12 +1059,21 @@ export default function Page() {
       />
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {selectedDayMovies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
+        {loadingMovies
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <MovieCardSkeleton key={index} />
+            ))
+          : selectedDayMovies.map((movie) => (
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                onOpenDetails={openMovieDetails}
+                onOpenTrailer={setTrailerMovie}
+              />
+            ))}
       </div>
 
-      {selectedDayMovies.length === 0 ? (
+      {!loadingMovies && selectedDayMovies.length === 0 ? (
         <div className="mt-8 rounded-[24px] border border-white/10 bg-white/[0.04] p-8 text-center text-white/70">
           No showtimes on this date.
         </div>
@@ -1029,6 +1188,137 @@ export default function Page() {
                       >
                         {formatShowtime(show.time)}
                       </a>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  };
+
+  const MovieDetailsPage = () => {
+    if (!selectedMovie) {
+      return (
+        <section className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+          <SectionHeading
+            eyebrow="Movie Details"
+            title="Select a movie to view details."
+            text="Choose any poster or movie title from the schedule to see showtimes, trailer, and ticket options."
+          />
+        </section>
+      );
+    }
+
+    const heroImage = selectedMovie.backdrop || selectedMovie.poster;
+    const groupedMovieShowtimes = Object.entries(
+      groupShowtimesByDay(selectedMovie.showtimes)
+    ).sort(([a], [b]) => a.localeCompare(b));
+    const nextMovieShowtime = selectedMovie.showtimes
+      .filter((show) => !isPastShowtime(show))
+      .sort(
+        (a, b) =>
+          parseCalendarDate(a.time).getTime() -
+          parseCalendarDate(b.time).getTime()
+      )[0];
+
+    return (
+      <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#111827] shadow-2xl shadow-black/30">
+          <div className="relative min-h-[420px]">
+            {heroImage ? (
+              <img
+                src={heroImage}
+                alt={selectedMovie.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : null}
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.96)_0%,rgba(6,11,19,0.76)_52%,rgba(6,11,19,0.35)_100%)]" />
+            <div className="relative z-10 grid min-h-[420px] gap-8 p-6 md:grid-cols-[220px_1fr] md:p-10">
+              <div className="max-w-[220px] overflow-hidden rounded-[22px] border border-white/10 shadow-2xl shadow-black/40">
+                <MoviePoster
+                  title={selectedMovie.title}
+                  poster={selectedMovie.poster || selectedMovie.backdrop}
+                  posterCandidates={[
+                    ...(selectedMovie.posterCandidates || []),
+                    ...(selectedMovie.backdropCandidates || []),
+                  ]}
+                />
+              </div>
+              <div className="flex flex-col justify-end">
+                <div className="mb-4 flex flex-wrap gap-3">
+                  {selectedMovie.rating ? (
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/78">
+                      {selectedMovie.rating}
+                    </span>
+                  ) : null}
+                  {formatRuntime(selectedMovie.duration) ? (
+                    <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/78">
+                      {formatRuntime(selectedMovie.duration)}
+                    </span>
+                  ) : null}
+                </div>
+                <h1 className="text-4xl font-semibold tracking-tight text-white md:text-6xl">
+                  {selectedMovie.title}
+                </h1>
+                {selectedMovie.synopsis ? (
+                  <p className="mt-5 max-w-3xl text-base leading-7 text-white/76">
+                    {selectedMovie.synopsis}
+                  </p>
+                ) : null}
+                <div className="mt-7 flex flex-wrap gap-3">
+                  {nextMovieShowtime ? (
+                    <a
+                      href={nextMovieShowtime.url || VEEZI_TICKETING_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
+                    >
+                      <Ticket className="h-4 w-4" />
+                      Buy Tickets
+                    </a>
+                  ) : null}
+                  {selectedMovie.trailer ? (
+                    <button
+                      onClick={() => setTrailerMovie(selectedMovie)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/8 px-5 py-3 font-semibold text-white transition hover:bg-white/12"
+                    >
+                      <Play className="h-4 w-4" />
+                      Watch Trailer
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10">
+          <SectionHeading
+            eyebrow="Showtimes"
+            title="All posted showtimes."
+            text="Passed showtimes stay visible in gray so guests can still see the full movie lineup for the day."
+          />
+          <div className="mt-8 grid gap-6">
+            {groupedMovieShowtimes.map(([day, shows]) => (
+              <div
+                key={day}
+                className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
+              >
+                <div className="text-xl font-semibold text-white">
+                  {formatLongDate(day)}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {shows
+                    .slice()
+                    .sort(
+                      (a, b) =>
+                        parseCalendarDate(a.time).getTime() -
+                        parseCalendarDate(b.time).getTime()
+                    )
+                    .map((show) => (
+                      <ShowtimeChip key={String(show.sessionId)} show={show} />
                     ))}
                 </div>
               </div>
@@ -1217,6 +1507,8 @@ export default function Page() {
         return <NowPlayingPage />;
       case "advance-tickets":
         return <AdvanceTicketsPage />;
+      case "movie-details":
+        return <MovieDetailsPage />;
       case "showtimes":
         return <ShowtimesPage />;
       case "private-events":
@@ -1291,6 +1583,60 @@ export default function Page() {
       </header>
 
       {renderPage()}
+
+      {nextAvailableShowtime &&
+      (activePage === "home" || activePage === "now-playing") ? (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#08101b]/96 p-3 shadow-2xl shadow-black/40 backdrop-blur md:hidden">
+          <a
+            href={nextAvailableShowtime.show.url || VEEZI_TICKETING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between rounded-2xl bg-[#77aef7] px-4 py-3 font-semibold text-[#09111e]"
+          >
+            <span>
+              Next: {nextAvailableShowtime.movie.title} at{" "}
+              {formatShowtime(nextAvailableShowtime.show.time)}
+            </span>
+            <Ticket className="h-5 w-5" />
+          </a>
+        </div>
+      ) : null}
+
+      {trailerMovie ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur">
+          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-[#08101b] shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <div className="font-semibold text-white">{trailerMovie.title}</div>
+              <button
+                onClick={() => setTrailerMovie(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close trailer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="aspect-video bg-black">
+              <iframe
+                src={getTrailerEmbedUrl(trailerMovie.trailer)}
+                title={`${trailerMovie.title} trailer`}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+            <div className="flex justify-end px-5 py-4">
+              <a
+                href={trailerMovie.trailer || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-[#9fc4ff] underline"
+              >
+                Open trailer in new tab
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <footer className="border-t border-white/10 bg-[#08101b]">
         <div className="mx-auto max-w-7xl px-6 py-12 text-center">
