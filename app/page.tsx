@@ -1560,7 +1560,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b13] text-white">
+    <div className="min-h-screen bg-[#060b13] pb-24 text-white md:pb-0">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(119,174,247,0.18),transparent_28%),linear-gradient(to_bottom,#0a1220,#060b13)]" />
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#08101b]/95 backdrop-blur-xl">
