@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const headers = {
     VeeziAccessToken: process.env.VEEZI_API_TOKEN || "",
@@ -151,5 +153,9 @@ export async function GET() {
     ),
   }));
 
-  return Response.json(movies);
+  return Response.json(movies, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    },
+  });
 }
