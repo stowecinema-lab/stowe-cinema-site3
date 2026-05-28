@@ -251,6 +251,10 @@ function filterMoviesForDate(movies: Movie[], selectedDate: string) {
     .filter((movie) => movie.showtimes.length > 0);
 }
 
+function isPastShowtime(show: Showtime) {
+  return new Date(show.time).getTime() < Date.now();
+}
+
 function MoviePoster({
   title,
   poster,
@@ -303,7 +307,16 @@ function MoviePoster({
 
 function ShowtimeChip({ show }: { show: Showtime }) {
   const soldOut = show.soldOut;
-  const low = !soldOut && show.fewTicketsLeft;
+  const past = isPastShowtime(show);
+  const low = !soldOut && !past && show.fewTicketsLeft;
+
+  if (past) {
+    return (
+      <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm text-white/35 line-through">
+        {formatShowtime(show.time)}
+      </span>
+    );
+  }
 
   return (
     <a
@@ -324,8 +337,14 @@ function ShowtimeChip({ show }: { show: Showtime }) {
 
 function MovieCard({ movie }: { movie: Movie }) {
   const heroUrl = movie.poster || movie.backdrop;
+  const availableShowtimes = movie.showtimes.filter(
+    (show) => !isPastShowtime(show)
+  );
+  const hasAvailableShowtimes = availableShowtimes.length > 0;
   const firstValidUrl =
-    movie.showtimes.find((s) => s.url)?.url || VEEZI_TICKETING_URL;
+    availableShowtimes.find((s) => s.url)?.url ||
+    movie.showtimes.find((s) => s.url)?.url ||
+    VEEZI_TICKETING_URL;
   const hasMultipleShowtimes = movie.showtimes.length > 1;
   const hasTrailer = Boolean(movie.trailer);
 
@@ -376,7 +395,11 @@ function MovieCard({ movie }: { movie: Movie }) {
           ))}
         </div>
 
-        {hasMultipleShowtimes ? (
+        {!hasAvailableShowtimes ? (
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center text-sm font-semibold text-white/45">
+            Showtimes have passed
+          </div>
+        ) : hasMultipleShowtimes ? (
           <div className="mt-4">
             <div className="block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/90">
               Select Showtime
