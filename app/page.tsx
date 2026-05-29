@@ -331,6 +331,67 @@ function scrollToPageTop() {
   window.setTimeout(scroll, 80);
 }
 
+function mergeMoviesByRememberedShowtimes(currentMovies: Movie[]) {
+  if (typeof window === "undefined") return currentMovies;
+
+  const todayKey = normalizeDateKey(new Date());
+  const storageKey = `stowe-cinema-schedule-${todayKey}`;
+
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    const rememberedMovies: Movie[] = stored ? JSON.parse(stored) : [];
+    const byMovieId = new Map(currentMovies.map((movie) => [movie.id, movie]));
+
+    for (const remembered of rememberedMovies) {
+      const rememberedTodayShowtimes = (remembered.showtimes || []).filter(
+        (show) => normalizeDateKey(show.time) === todayKey
+      );
+      if (rememberedTodayShowtimes.length === 0) continue;
+
+      const existing = byMovieId.get(remembered.id);
+      if (!existing) {
+        byMovieId.set(remembered.id, {
+          ...remembered,
+          showtimes: rememberedTodayShowtimes,
+        });
+        continue;
+      }
+
+      const bySessionId = new Map(
+        [
+          ...rememberedTodayShowtimes,
+          ...(existing.showtimes || []),
+        ].map((show) => [String(show.sessionId), show])
+      );
+
+      byMovieId.set(existing.id, {
+        ...remembered,
+        ...existing,
+        showtimes: Array.from(bySessionId.values()).sort(
+          (a, b) =>
+            parseCalendarDate(a.time).getTime() -
+            parseCalendarDate(b.time).getTime()
+        ),
+      });
+    }
+
+    const merged = Array.from(byMovieId.values());
+    const todayMovies = merged
+      .map((movie) => ({
+        ...movie,
+        showtimes: (movie.showtimes || []).filter(
+          (show) => normalizeDateKey(show.time) === todayKey
+        ),
+      }))
+      .filter((movie) => movie.showtimes.length > 0);
+
+    window.localStorage.setItem(storageKey, JSON.stringify(todayMovies));
+    return merged;
+  } catch {
+    return currentMovies;
+  }
+}
+
 function getNextAvailableShowtime(movie: Movie) {
   return movie.showtimes
     .filter((show) => !isPastShowtime(show) && !show.soldOut)
@@ -966,7 +1027,7 @@ export default function Page() {
                 }))
               : [],
           }));
-          setMovies(patched);
+          setMovies(mergeMoviesByRememberedShowtimes(patched));
         }
       } catch {
         setMovies(fallbackMovies);
