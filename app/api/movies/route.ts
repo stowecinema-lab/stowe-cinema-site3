@@ -1,5 +1,91 @@
 export const dynamic = "force-dynamic";
 
+type CachedMovie = {
+  id: string;
+  showtimes: Array<{ sessionId: string | number; time: string }>;
+  [key: string]: any;
+};
+
+let sameDayMovieMemory = new Map<string, CachedMovie>();
+let sameDayMemoryKey = "";
+
+function getNewYorkDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function getShowDateKey(time?: string) {
+  if (!time) return "";
+  return String(time).split("T")[0];
+}
+
+function mergeRememberedSameDayMovies(movies: CachedMovie[]) {
+  const todayKey = getNewYorkDateKey();
+
+  if (sameDayMemoryKey !== todayKey) {
+    sameDayMovieMemory = new Map();
+    sameDayMemoryKey = todayKey;
+  }
+
+  for (const movie of movies) {
+    const todayShowtimes = (movie.showtimes || []).filter(
+      (show) => getShowDateKey(show.time) === todayKey
+    );
+
+    if (todayShowtimes.length > 0) {
+      const remembered = sameDayMovieMemory.get(movie.id);
+      const rememberedShowtimes = remembered?.showtimes || [];
+      const bySessionId = new Map(
+        [...rememberedShowtimes, ...todayShowtimes].map((show) => [
+          String(show.sessionId),
+          show,
+        ])
+      );
+
+      sameDayMovieMemory.set(movie.id, {
+        ...(remembered || movie),
+        ...movie,
+        showtimes: Array.from(bySessionId.values()),
+      });
+    }
+  }
+
+  const byMovieId = new Map(movies.map((movie) => [movie.id, movie]));
+
+  for (const remembered of sameDayMovieMemory.values()) {
+    const existing = byMovieId.get(remembered.id);
+
+    if (!existing) {
+      byMovieId.set(remembered.id, remembered);
+      continue;
+    }
+
+    const bySessionId = new Map(
+      [...(remembered.showtimes || []), ...(existing.showtimes || [])].map(
+        (show) => [String(show.sessionId), show]
+      )
+    );
+
+    byMovieId.set(existing.id, {
+      ...remembered,
+      ...existing,
+      showtimes: Array.from(bySessionId.values()),
+    });
+  }
+
+  return Array.from(byMovieId.values()).map((movie) => ({
+    ...movie,
+    showtimes: (movie.showtimes || []).sort(
+      (a: any, b: any) =>
+        new Date(a.time).getTime() - new Date(b.time).getTime()
+    ),
+  }));
+}
+
 export async function GET() {
   const headers = {
     VeeziAccessToken: process.env.VEEZI_API_TOKEN || "",
@@ -172,8 +258,9 @@ export async function GET() {
         new Date(a.time).getTime() - new Date(b.time).getTime()
     ),
   }));
+  const rememberedMovies = mergeRememberedSameDayMovies(movies);
 
-  return Response.json(movies, {
+  return Response.json(rememberedMovies, {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
     },
