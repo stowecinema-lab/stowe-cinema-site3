@@ -188,21 +188,6 @@ function getNextWeekday(targetDay: number) {
   return date;
 }
 
-function getUpcomingWeekendDate() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const day = today.getDay();
-
-  if (day === 0) {
-    return today;
-  }
-
-  const saturday = 6;
-  const offset = (saturday - day + 7) % 7;
-  today.setDate(today.getDate() + offset);
-  return today;
-}
-
 function isTomorrow(date: Date) {
   const tomorrow = new Date();
   tomorrow.setHours(0, 0, 0, 0);
@@ -689,11 +674,10 @@ function ComingSoonCard({
 
 function AdvanceTicketsSkeleton() {
   return (
-    <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
+    <div className="mb-8 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4">
       <div className="h-4 w-40 animate-pulse rounded-full bg-amber-200/12" />
-      <div className="mt-4 h-9 w-full max-w-lg animate-pulse rounded-full bg-white/[0.08]" />
-      <div className="mt-3 h-5 w-full max-w-2xl animate-pulse rounded-full bg-white/[0.06]" />
-      <div className="mt-6 h-[260px] animate-pulse rounded-[8px] bg-white/[0.06] md:h-[320px]" />
+      <div className="mt-4 h-8 w-full max-w-md animate-pulse rounded-full bg-white/[0.08]" />
+      <div className="mt-5 h-[210px] animate-pulse rounded-[8px] bg-white/[0.06] md:h-[240px]" />
     </div>
   );
 }
@@ -713,7 +697,7 @@ function AdvanceBanner({
       onClick={() => onOpen(movie)}
       className="group relative w-full overflow-hidden rounded-[8px] border border-amber-300/20 bg-[#101723] text-left shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-amber-200/45"
     >
-      <div className="relative min-h-[260px] md:min-h-[320px]">
+      <div className="relative min-h-[210px] md:min-h-[240px]">
         {bannerImage ? (
           <img
             src={bannerImage}
@@ -724,7 +708,7 @@ function AdvanceBanner({
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.96)_0%,rgba(6,11,19,0.82)_48%,rgba(6,11,19,0.35)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,196,71,0.16),transparent_45%,rgba(6,11,19,0.6))]" />
 
-        <div className="relative z-10 grid min-h-[260px] gap-5 p-5 md:min-h-[320px] md:grid-cols-[150px_1fr] md:p-6">
+        <div className="relative z-10 grid min-h-[210px] gap-4 p-4 md:min-h-[240px] md:grid-cols-[110px_1fr] md:p-5">
           <div className="hidden overflow-hidden rounded-[8px] border border-white/12 shadow-xl shadow-black/40 md:block">
             <MoviePoster
               title={movie.title}
@@ -746,18 +730,15 @@ function AdvanceBanner({
                   On Sale Now
                 </span>
               </div>
-              <div className="mt-5 text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              <div className="mt-4 text-2xl font-semibold tracking-tight text-white md:text-4xl">
                 {movie.title}
               </div>
-              <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/28 px-3 py-1 text-sm font-semibold uppercase tracking-[0.18em] text-white/72">
+              <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/72">
                 Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
-              </div>
-              <div className="mt-4 max-w-xl text-sm leading-6 text-white/78 md:text-base md:leading-7">
-                Reserve seats early for this upcoming release.
               </div>
             </div>
 
-            <div className="mt-6 inline-flex w-fit items-center gap-3 rounded-2xl bg-amber-300 px-5 py-3 text-sm font-semibold text-[#171006] shadow-lg shadow-amber-300/20 transition group-hover:bg-amber-200">
+            <div className="mt-5 inline-flex w-fit items-center gap-2 rounded-2xl bg-amber-300 px-4 py-2.5 text-sm font-semibold text-[#171006] shadow-lg shadow-amber-300/20 transition group-hover:bg-amber-200">
               See Advance Showtimes
               <ChevronRight className="h-4 w-4" />
             </div>
@@ -963,47 +944,6 @@ function DateSelector({
   );
 }
 
-function QuickDateFilters({
-  selectedDate,
-  onSelect,
-}: {
-  selectedDate: string;
-  onSelect: (dateKey: string) => void;
-}) {
-  const options = [
-    { label: "Today", date: new Date() },
-    { label: "Tomorrow", date: (() => {
-      const date = new Date();
-      date.setDate(date.getDate() + 1);
-      return date;
-    })() },
-    { label: "Weekend", date: getUpcomingWeekendDate() },
-  ];
-
-  return (
-    <div className="sticky top-[88px] z-30 -mx-6 mt-5 flex justify-center gap-2 overflow-x-auto border-y border-white/10 bg-[#060b13]/92 px-6 py-3 backdrop-blur md:static md:mx-0 md:flex-wrap md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-0">
-      {options.map((option) => {
-        const key = normalizeDateKey(option.date);
-        const active = selectedDate === key;
-
-        return (
-          <button
-            key={option.label}
-            onClick={() => onSelect(key)}
-            className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-              active
-                ? "border-[#77aef7]/45 bg-[#77aef7] text-[#09111e]"
-                : "border-white/10 bg-white/5 text-white/72 hover:border-white/20 hover:text-white"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function Page() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
@@ -1174,12 +1114,11 @@ export default function Page() {
         {loadingMovies ? (
           <AdvanceTicketsSkeleton />
         ) : advanceMovies.length > 0 ? (
-          <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
+          <div className="mb-8 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <SectionHeading
                 eyebrow="Upcoming releases"
                 title="Advance tickets on sale now."
-                text="Reserve seats early for upcoming releases before opening weekend arrives."
               />
               <button
                 onClick={() => goToPage("advance-tickets")}
@@ -1189,7 +1128,7 @@ export default function Page() {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-6 flex snap-x gap-5 overflow-x-auto pb-3">
+            <div className="mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
               {advanceMovies.slice(0, 3).map((movie) => (
                 <div key={movie.id} className="min-w-full snap-center md:min-w-[72%] lg:min-w-[58%]">
                   <AdvanceBanner
@@ -1220,8 +1159,6 @@ export default function Page() {
             the listed start time.
           </div>
         </div>
-
-        <QuickDateFilters selectedDate={selectedDate} onSelect={setSelectedDate} />
 
         <DateSelector
           dates={selectableDates}
@@ -1324,8 +1261,6 @@ export default function Page() {
       <div className="mb-6 inline-flex items-center rounded-full border border-[#7db3ff]/20 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.3em] text-[#a9cdff]">
         Now Playing
       </div>
-
-      <QuickDateFilters selectedDate={selectedDate} onSelect={setSelectedDate} />
 
       <DateSelector
         dates={selectableDates}
