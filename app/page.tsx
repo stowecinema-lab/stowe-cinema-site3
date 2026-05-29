@@ -216,6 +216,32 @@ function startOfToday() {
   return today;
 }
 
+function addMonths(date: Date, months: number) {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
+function getMovieComingSoonDate(movie: Movie) {
+  if (movie.openingDate) return parseCalendarDate(movie.openingDate);
+
+  const firstShowtime = movie.showtimes
+    .slice()
+    .sort(
+      (a, b) =>
+        parseCalendarDate(a.time).getTime() - parseCalendarDate(b.time).getTime()
+    )[0];
+
+  if (
+    firstShowtime &&
+    parseCalendarDate(firstShowtime.time).getTime() > startOfToday().getTime()
+  ) {
+    return parseCalendarDate(firstShowtime.time);
+  }
+
+  return null;
+}
+
 function isAdvanceMovie(movie: Movie) {
   const firstShowtime = movie.showtimes[0];
   if (!firstShowtime) return false;
@@ -246,6 +272,30 @@ function getAdvanceMovies(movies: Movie[]) {
         parseCalendarDate(a.firstShowtime.time).getTime() -
         parseCalendarDate(b.firstShowtime.time).getTime()
     );
+}
+
+function isComingSoonMovie(movie: Movie) {
+  const comingSoonDate = getMovieComingSoonDate(movie);
+  if (!comingSoonDate) return false;
+
+  const today = startOfToday();
+  const limit = addMonths(today, 2);
+  comingSoonDate.setHours(0, 0, 0, 0);
+
+  return (
+    comingSoonDate.getTime() > today.getTime() &&
+    comingSoonDate.getTime() <= limit.getTime()
+  );
+}
+
+function getComingSoonMovies(movies: Movie[]) {
+  return movies
+    .filter(isComingSoonMovie)
+    .sort((a, b) => {
+      const aDate = getMovieComingSoonDate(a);
+      const bDate = getMovieComingSoonDate(b);
+      return (aDate?.getTime() || 0) - (bDate?.getTime() || 0);
+    });
 }
 
 function groupShowtimesByDay(shows: Showtime[]) {
@@ -464,7 +514,7 @@ function MovieCard({
     <div className="group overflow-hidden rounded-[8px] border border-white/10 bg-[#101723] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-[#77aef7]/35">
       <button
         onClick={() => onOpenDetails(movie)}
-        className="relative block aspect-[4/5] w-full overflow-hidden text-left sm:aspect-[2/3]"
+        className="relative block aspect-[2/3] w-full overflow-hidden text-left"
         aria-label={`View details for ${movie.title}`}
       >
         <MoviePoster
@@ -559,6 +609,79 @@ function MovieCardSkeleton() {
           <div className="h-8 w-16 animate-pulse rounded-full bg-white/[0.06]" />
         </div>
         <div className="h-11 animate-pulse rounded-xl bg-white/[0.06]" />
+      </div>
+    </div>
+  );
+}
+
+function ComingSoonCard({
+  movie,
+  onOpenAdvance,
+  onOpenDetails,
+}: {
+  movie: Movie;
+  onOpenAdvance: (movie: AdvanceBannerMovie) => void;
+  onOpenDetails: (movie: Movie) => void;
+}) {
+  const nextShowtime = getNextAvailableShowtime(movie);
+  const ticketsAvailable = Boolean(nextShowtime);
+
+  return (
+    <div className="overflow-hidden rounded-[8px] border border-white/10 bg-[#101723] shadow-2xl shadow-black/25">
+      <button
+        onClick={() => onOpenDetails(movie)}
+        className="relative block aspect-[2/3] w-full overflow-hidden text-left"
+        aria-label={`View details for ${movie.title}`}
+      >
+        <MoviePoster
+          title={movie.title}
+          poster={movie.poster || movie.backdrop}
+          posterCandidates={[
+            ...(movie.posterCandidates || []),
+            ...(movie.backdropCandidates || []),
+          ]}
+        />
+        <div
+          className={`absolute left-3 top-3 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] backdrop-blur ${
+            ticketsAvailable
+              ? "border-amber-300/35 bg-amber-300/20 text-amber-100"
+              : "border-white/15 bg-black/70 text-white"
+          }`}
+        >
+          {ticketsAvailable ? "Tickets Available" : "Coming Soon"}
+        </div>
+      </button>
+
+      <div className="p-5">
+        <button
+          onClick={() => onOpenDetails(movie)}
+          className="text-left text-xl font-semibold leading-tight text-white transition hover:text-[#9fc4ff]"
+        >
+          {movie.title}
+        </button>
+        <div className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-white/58">
+          {movie.openingDate
+            ? `Opens ${formatLongDate(movie.openingDate)}`
+            : "Opening date coming soon"}
+        </div>
+        {ticketsAvailable && nextShowtime ? (
+          <button
+            onClick={() =>
+              onOpenAdvance({
+                ...movie,
+                firstShowtime: nextShowtime,
+              })
+            }
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-4 py-3 text-sm font-bold text-[#171006] shadow-lg shadow-amber-300/20 transition hover:bg-amber-200"
+          >
+            View Advance Showtimes
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm font-semibold text-white/58">
+            Tickets not on sale yet
+          </div>
+        )}
       </div>
     </div>
   );
@@ -928,6 +1051,7 @@ export default function Page() {
 
   const groupedDays = useMemo(() => groupByDay(movies), [movies]);
   const advanceMovies = useMemo(() => getAdvanceMovies(movies), [movies]);
+  const comingSoonMovies = useMemo(() => getComingSoonMovies(movies), [movies]);
   const selectableDates = useMemo(() => getDateRange(10), []);
   const selectedDayMovies = useMemo(
     () => filterMoviesForDate(movies, selectedDate),
@@ -1049,6 +1173,7 @@ export default function Page() {
   const pageLinks = [
     { id: "home", label: "Home" },
     { id: "advance-tickets", label: "Advance Tickets" },
+    { id: "coming-soon", label: "Coming Soon" },
     { id: "now-playing", label: "Now Playing" },
     { id: "showtimes", label: "Showtimes" },
     { id: "private-events", label: "Private Events" },
@@ -1361,6 +1486,35 @@ export default function Page() {
     );
   };
 
+  const ComingSoonPage = () => (
+    <section className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+      <SectionHeading
+        eyebrow="Coming Soon"
+        title="Upcoming movies at Stowe Cinema."
+        text="Browse films opening in the next two months. If tickets are already available, jump straight to advance showtimes."
+      />
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {loadingMovies
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <MovieCardSkeleton key={index} />
+            ))
+          : comingSoonMovies.map((movie) => (
+              <ComingSoonCard
+                key={movie.id}
+                movie={movie}
+                onOpenAdvance={openAdvanceMovie}
+                onOpenDetails={openMovieDetails}
+              />
+            ))}
+      </div>
+
+      {!loadingMovies && comingSoonMovies.length === 0 ? (
+        <EmptyState message="No coming soon titles are posted yet. Check back soon for newly announced movies." />
+      ) : null}
+    </section>
+  );
+
   const MovieDetailsPage = () => {
     if (!selectedMovie) {
       return (
@@ -1375,6 +1529,10 @@ export default function Page() {
     }
 
     const heroImage = selectedMovie.backdrop || selectedMovie.poster;
+    const selectedMovieOpenDate =
+      selectedMovie.openingDate ||
+      (isComingSoonMovie(selectedMovie) ? selectedMovie.showtimes[0]?.time : "") ||
+      "";
     const groupedMovieShowtimes = Object.entries(
       groupShowtimesByDay(selectedMovie.showtimes)
     ).sort(([a], [b]) => a.localeCompare(b));
@@ -1411,6 +1569,11 @@ export default function Page() {
               </div>
               <div className="flex flex-col justify-end">
                 <div className="mb-4 flex flex-wrap gap-3">
+                  {isComingSoonMovie(selectedMovie) ? (
+                    <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-xs font-semibold text-amber-100">
+                      {nextMovieShowtime ? "Tickets Available" : "Coming Soon"}
+                    </span>
+                  ) : null}
                   {selectedMovie.rating ? (
                     <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/78">
                       {selectedMovie.rating}
@@ -1425,11 +1588,20 @@ export default function Page() {
                 <h1 className="text-4xl font-semibold tracking-tight text-white md:text-6xl">
                   {selectedMovie.title}
                 </h1>
+                {selectedMovieOpenDate ? (
+                  <div className="mt-3 text-sm font-semibold uppercase tracking-[0.2em] text-white/58">
+                    Opens {formatLongDate(selectedMovieOpenDate)}
+                  </div>
+                ) : null}
                 {selectedMovie.synopsis ? (
                   <p className="mt-5 max-w-3xl text-base leading-7 text-white/76">
                     {selectedMovie.synopsis}
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mt-5 max-w-3xl text-base leading-7 text-white/62">
+                    Synopsis coming soon.
+                  </p>
+                )}
                 <div className="mt-7 flex flex-wrap gap-3">
                   {nextMovieShowtime ? (
                     <a
@@ -1460,33 +1632,43 @@ export default function Page() {
         <div className="mt-10">
           <SectionHeading
             eyebrow="Showtimes"
-            title="All posted showtimes."
-            text="Choose an available showtime below to continue to ticket checkout."
+            title={
+              groupedMovieShowtimes.length > 0
+                ? "All posted showtimes."
+                : "Tickets are not on sale yet."
+            }
+            text={
+              groupedMovieShowtimes.length > 0
+                ? "Choose an available showtime below to continue to ticket checkout."
+                : "Check back soon for showtimes and advance ticket availability."
+            }
           />
-          <div className="mt-8 grid gap-6">
-            {groupedMovieShowtimes.map(([day, shows]) => (
-              <div
-                key={day}
-                className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
-              >
-                <div className="text-xl font-semibold text-white">
-                  {formatLongDate(day)}
+          {groupedMovieShowtimes.length > 0 ? (
+            <div className="mt-8 grid gap-6">
+              {groupedMovieShowtimes.map(([day, shows]) => (
+                <div
+                  key={day}
+                  className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
+                >
+                  <div className="text-xl font-semibold text-white">
+                    {formatLongDate(day)}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {shows
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          parseCalendarDate(a.time).getTime() -
+                          parseCalendarDate(b.time).getTime()
+                      )
+                      .map((show) => (
+                        <ShowtimeChip key={String(show.sessionId)} show={show} />
+                      ))}
+                  </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {shows
-                    .slice()
-                    .sort(
-                      (a, b) =>
-                        parseCalendarDate(a.time).getTime() -
-                        parseCalendarDate(b.time).getTime()
-                    )
-                    .map((show) => (
-                      <ShowtimeChip key={String(show.sessionId)} show={show} />
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
     );
@@ -1698,6 +1880,8 @@ export default function Page() {
         return <NowPlayingPage />;
       case "advance-tickets":
         return <AdvanceTicketsPage />;
+      case "coming-soon":
+        return <ComingSoonPage />;
       case "movie-details":
         return <MovieDetailsPage />;
       case "showtimes":
