@@ -857,25 +857,6 @@ function DateSelector({
   futureDateInputRef: React.RefObject<HTMLInputElement | null>;
   handleFutureDateSelect: (value: string) => void;
 }) {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const selectedButton = container.querySelector<HTMLButtonElement>(
-      `[data-date-key="${selectedDate}"]`
-    );
-
-    if (!selectedButton) return;
-
-    selectedButton.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  }, [selectedDate]);
-
   return (
     <div className="mt-4">
       <div className="mx-auto max-w-4xl">
@@ -884,10 +865,7 @@ function DateSelector({
             <ChevronLeft className="h-8 w-8" />
           </div>
 
-          <div
-            ref={scrollContainerRef}
-            className="flex flex-1 overflow-x-auto bg-black/30"
-          >
+          <div className="flex flex-1 overflow-x-auto bg-black/30">
             {dates.map((date) => {
               const key = normalizeDateKey(date);
               const active = key === selectedDate;
@@ -895,8 +873,14 @@ function DateSelector({
               return (
                 <button
                   key={key}
-                  data-date-key={key}
-                  onClick={() => onSelect(key)}
+                  onClick={(event) => {
+                    onSelect(key);
+                    event.currentTarget.scrollIntoView({
+                      behavior: "smooth",
+                      inline: "center",
+                      block: "nearest",
+                    });
+                  }}
                   className={`min-w-[150px] shrink-0 border-r border-white/5 px-6 py-5 text-center transition ${
                     active
                       ? "bg-red-600 text-white"
