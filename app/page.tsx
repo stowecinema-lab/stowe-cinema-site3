@@ -858,17 +858,18 @@ function DateSelector({
   handleFutureDateSelect: (value: string) => void;
 }) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const previousSelectedDateRef = useRef(selectedDate);
 
   useEffect(() => {
-    if (previousSelectedDateRef.current === selectedDate) return;
-    previousSelectedDateRef.current = selectedDate;
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-    const selectedButton = scrollContainerRef.current?.querySelector<HTMLButtonElement>(
+    const selectedButton = container.querySelector<HTMLButtonElement>(
       `[data-date-key="${selectedDate}"]`
     );
 
-    selectedButton?.scrollIntoView({
+    if (!selectedButton) return;
+
+    selectedButton.scrollIntoView({
       behavior: "smooth",
       inline: "center",
       block: "nearest",
