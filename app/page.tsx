@@ -1068,19 +1068,6 @@ export default function Page() {
     () => movies.find((movie) => movie.id === selectedMovieId) || null,
     [movies, selectedMovieId]
   );
-  const nextAvailableShowtime = useMemo(() => {
-    return selectedDayMovies
-      .flatMap((movie) =>
-        movie.showtimes.map((show) => ({ movie, show }))
-      )
-      .filter(({ show }) => !isPastShowtime(show))
-      .sort(
-        (a, b) =>
-          parseCalendarDate(a.show.time).getTime() -
-          parseCalendarDate(b.show.time).getTime()
-      )[0];
-  }, [selectedDayMovies]);
-
   useEffect(() => {
     if (!selectedAdvanceMovieId && advanceMovies[0]) {
       setSelectedAdvanceMovieId(advanceMovies[0].id);
@@ -1898,7 +1885,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b13] pb-24 text-white md:pb-0">
+    <div className="min-h-screen bg-[#060b13] text-white">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(119,174,247,0.18),transparent_28%),linear-gradient(to_bottom,#0a1220,#060b13)]" />
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#08101b]/95 backdrop-blur-xl">
@@ -1961,24 +1948,6 @@ export default function Page() {
       </header>
 
       {renderPage()}
-
-      {nextAvailableShowtime &&
-      (activePage === "home" || activePage === "now-playing") ? (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#08101b]/96 p-3 shadow-2xl shadow-black/40 backdrop-blur md:hidden">
-          <a
-            href={nextAvailableShowtime.show.url || VEEZI_TICKETING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-2xl bg-[#77aef7] px-4 py-3 font-semibold text-[#09111e]"
-          >
-            <span>
-              Next: {nextAvailableShowtime.movie.title} at{" "}
-              {formatShowtime(nextAvailableShowtime.show.time)}
-            </span>
-            <Ticket className="h-5 w-5" />
-          </a>
-        </div>
-      ) : null}
 
       {trailerMovie ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur">
