@@ -6,7 +6,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Film,
   Mail,
   MapPin,
@@ -546,71 +545,6 @@ function MovieCardSkeleton() {
   );
 }
 
-function TheaterIntro({
-  nextShowtime,
-  onViewShowtimes,
-}: {
-  nextShowtime?: { movie: Movie; show: Showtime };
-  onViewShowtimes: () => void;
-}) {
-  return (
-    <section className="border-b border-white/10 bg-[linear-gradient(135deg,#0d1624,#07101c_62%,#111827)]">
-      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1fr_auto] md:items-end md:py-14">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#77aef7]/25 bg-[#77aef7]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[#b9d7ff]">
-            <Film className="h-3.5 w-3.5" />
-            Stowe Cinema
-          </div>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white md:text-6xl">
-            Showtimes, tickets, and movie nights in Stowe.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-white/72 md:text-lg">
-            Check today&apos;s schedule, choose a showtime, and buy tickets online.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <button
-              onClick={onViewShowtimes}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#77aef7] px-5 py-3 font-semibold text-[#09111e] shadow-lg shadow-[#77aef7]/20 transition hover:bg-[#90bdff]"
-            >
-              <Clock3 className="h-4 w-4" />
-              View Today&apos;s Showtimes
-            </button>
-            <a
-              href={VEEZI_TICKETING_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15"
-            >
-              <Ticket className="h-4 w-4" />
-              Buy Tickets
-            </a>
-          </div>
-        </div>
-
-        <div className="rounded-[8px] border border-white/10 bg-black/20 p-5 md:min-w-[300px]">
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9fc4ff]">
-            Next Showtime
-          </div>
-          {nextShowtime ? (
-            <>
-              <div className="mt-3 text-xl font-semibold text-white">
-                {nextShowtime.movie.title}
-              </div>
-              <div className="mt-1 text-sm text-white/58">
-                {formatShowtime(nextShowtime.show.time)}
-              </div>
-            </>
-          ) : (
-            <div className="mt-3 text-sm leading-6 text-white/62">
-              Live showtimes are loading. The schedule appears below as soon as it is ready.
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function AdvanceBanner({
   movie,
   onOpen,
@@ -1031,20 +965,7 @@ export default function Page() {
 
   const HomePage = () => (
     <>
-      <TheaterIntro
-        nextShowtime={nextAvailableShowtime}
-        onViewShowtimes={() => {
-          setActivePage("home");
-          window.requestAnimationFrame(() => {
-            document.getElementById("showtimes")?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-          });
-        }}
-      />
-
-      <section id="showtimes" className="mx-auto max-w-7xl px-6 py-8 md:py-10">
+      <section id="showtimes" className="mx-auto max-w-7xl px-6 py-6 md:py-10">
         {advanceMovies.length > 0 ? (
           <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
