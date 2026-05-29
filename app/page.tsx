@@ -47,6 +47,13 @@ type AdvanceBannerMovie = Movie & {
   firstShowtime: Showtime;
 };
 
+type PageState = {
+  page: string;
+  selectedDate?: string;
+  selectedAdvanceMovieId?: string | null;
+  selectedMovieId?: string | null;
+};
+
 const VEEZI_TICKETING_URL =
   "https://ticketing.useast.veezi.com/sessions/?siteToken=vj2rd320rz8shtsprx8110dk9g";
 
@@ -89,17 +96,17 @@ function LogoMark({ onClick }: { onClick?: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-3 rounded-[20px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(14,22,36,0.94),rgba(7,12,22,0.9))] px-4 py-3 text-left text-white shadow-lg shadow-black/25 backdrop-blur transition hover:border-[#9fc4ff]/35 hover:bg-[linear-gradient(135deg,rgba(18,29,47,0.96),rgba(8,14,25,0.94))]"
+      className="inline-flex items-center gap-2 rounded-[14px] border border-[#8dbdff]/20 bg-[linear-gradient(135deg,rgba(14,22,36,0.94),rgba(7,12,22,0.9))] px-3 py-2 text-left text-white shadow-lg shadow-black/25 backdrop-blur transition hover:border-[#9fc4ff]/35 hover:bg-[linear-gradient(135deg,rgba(18,29,47,0.96),rgba(8,14,25,0.94))] sm:gap-3 sm:rounded-[20px] sm:px-4 sm:py-3"
       aria-label="Go to Stowe Cinema home"
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#9ec5ff]/28 bg-[linear-gradient(180deg,rgba(119,174,247,0.2),rgba(119,174,247,0.06))]">
-        <Film className="h-5 w-5 text-[#dcecff]" />
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#9ec5ff]/28 bg-[linear-gradient(180deg,rgba(119,174,247,0.2),rgba(119,174,247,0.06))] sm:h-11 sm:w-11 sm:rounded-[14px]">
+        <Film className="h-4 w-4 text-[#dcecff] sm:h-5 sm:w-5" />
       </div>
       <div className="flex flex-col leading-none">
-        <span className="text-[1.2rem] font-semibold uppercase tracking-[0.28em] text-white sm:text-[1.35rem]">
+        <span className="text-[1rem] font-semibold uppercase tracking-[0.2em] text-white sm:text-[1.35rem] sm:tracking-[0.28em]">
           STOWE
         </span>
-        <span className="mt-1 text-[0.68rem] font-medium uppercase tracking-[0.52em] text-[#9fc4ff] sm:text-[0.72rem]">
+        <span className="mt-1 text-[0.58rem] font-medium uppercase tracking-[0.38em] text-[#9fc4ff] sm:text-[0.72rem] sm:tracking-[0.52em]">
           CINEMA
         </span>
       </div>
@@ -277,6 +284,18 @@ function isPastShowtime(show: Showtime) {
   return new Date(show.time).getTime() < Date.now();
 }
 
+function scrollToPageTop() {
+  const scroll = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  scroll();
+  window.requestAnimationFrame(scroll);
+  window.setTimeout(scroll, 80);
+}
+
 function getNextAvailableShowtime(movie: Movie) {
   return movie.showtimes
     .filter((show) => !isPastShowtime(show) && !show.soldOut)
@@ -395,7 +414,7 @@ function ShowtimeChip({ show }: { show: Showtime }) {
   if (past) {
     return (
       <span className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white/35 line-through">
-        {formatShowtime(show.time)}
+        {formatShowtime(show.time)} - Passed
       </span>
     );
   }
@@ -445,7 +464,7 @@ function MovieCard({
     <div className="group overflow-hidden rounded-[8px] border border-white/10 bg-[#101723] shadow-2xl shadow-black/25 transition duration-300 hover:-translate-y-1 hover:border-[#77aef7]/35">
       <button
         onClick={() => onOpenDetails(movie)}
-        className="relative block aspect-[2/3] w-full overflow-hidden text-left"
+        className="relative block aspect-[4/5] w-full overflow-hidden text-left sm:aspect-[2/3]"
         aria-label={`View details for ${movie.title}`}
       >
         <MoviePoster
@@ -461,7 +480,7 @@ function MovieCard({
         </div>
       </button>
 
-      <div className="p-5">
+      <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <button
@@ -492,7 +511,7 @@ function MovieCard({
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5">
           {movie.showtimes.slice(0, 8).map((show) => (
             <ShowtimeChip key={String(show.sessionId)} show={show} />
           ))}
@@ -541,6 +560,17 @@ function MovieCardSkeleton() {
         </div>
         <div className="h-11 animate-pulse rounded-xl bg-white/[0.06]" />
       </div>
+    </div>
+  );
+}
+
+function AdvanceTicketsSkeleton() {
+  return (
+    <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
+      <div className="h-4 w-40 animate-pulse rounded-full bg-amber-200/12" />
+      <div className="mt-4 h-9 w-full max-w-lg animate-pulse rounded-full bg-white/[0.08]" />
+      <div className="mt-3 h-5 w-full max-w-2xl animate-pulse rounded-full bg-white/[0.06]" />
+      <div className="mt-6 h-[260px] animate-pulse rounded-[8px] bg-white/[0.06] md:h-[320px]" />
     </div>
   );
 }
@@ -933,24 +963,87 @@ export default function Page() {
     }
   }, [advanceMovies, selectedAdvanceMovieId]);
 
+  useEffect(() => {
+    const initialState: PageState = {
+      page: activePage,
+      selectedDate,
+      selectedAdvanceMovieId,
+      selectedMovieId,
+    };
+    window.history.replaceState(initialState, "");
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state as PageState | null;
+      if (!state?.page) return;
+
+      setActivePage(state.page);
+      if (state.selectedDate) setSelectedDate(state.selectedDate);
+      setSelectedAdvanceMovieId(state.selectedAdvanceMovieId ?? null);
+      setSelectedMovieId(state.selectedMovieId ?? null);
+      setMenuOpen(false);
+      scrollToPageTop();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const goToPage = (
+    page: string,
+    options: {
+      selectedDate?: string;
+      selectedAdvanceMovieId?: string | null;
+      selectedMovieId?: string | null;
+      push?: boolean;
+      scroll?: boolean;
+    } = {}
+  ) => {
+    const nextState: PageState = {
+      page,
+      selectedDate: options.selectedDate ?? selectedDate,
+      selectedAdvanceMovieId:
+        options.selectedAdvanceMovieId !== undefined
+          ? options.selectedAdvanceMovieId
+          : selectedAdvanceMovieId,
+      selectedMovieId:
+        options.selectedMovieId !== undefined
+          ? options.selectedMovieId
+          : selectedMovieId,
+    };
+
+    setActivePage(page);
+    if (options.selectedDate) setSelectedDate(options.selectedDate);
+    if (options.selectedAdvanceMovieId !== undefined) {
+      setSelectedAdvanceMovieId(options.selectedAdvanceMovieId);
+    }
+    if (options.selectedMovieId !== undefined) {
+      setSelectedMovieId(options.selectedMovieId);
+    }
+    setMenuOpen(false);
+
+    if (options.push !== false) {
+      window.history.pushState(nextState, "");
+    }
+
+    if (options.scroll !== false) {
+      scrollToPageTop();
+    }
+  };
+
   const handleFutureDateSelect = (value: string) => {
     if (!value) return;
-    setActivePage("home");
-    setSelectedDate(value);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    goToPage("home", { selectedDate: value });
   };
 
   const openAdvanceMovie = (movie: AdvanceBannerMovie) => {
-    setSelectedAdvanceMovieId(movie.id);
-    setSelectedDate(normalizeDateKey(movie.firstShowtime.time));
-    setActivePage("advance-tickets");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    goToPage("advance-tickets", {
+      selectedAdvanceMovieId: movie.id,
+      selectedDate: normalizeDateKey(movie.firstShowtime.time),
+    });
   };
 
   const openMovieDetails = (movie: Movie) => {
-    setSelectedMovieId(movie.id);
-    setActivePage("movie-details");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    goToPage("movie-details", { selectedMovieId: movie.id });
   };
 
   const pageLinks = [
@@ -966,7 +1059,9 @@ export default function Page() {
   const HomePage = () => (
     <>
       <section id="showtimes" className="mx-auto max-w-7xl px-6 py-6 md:py-10">
-        {advanceMovies.length > 0 ? (
+        {loadingMovies ? (
+          <AdvanceTicketsSkeleton />
+        ) : advanceMovies.length > 0 ? (
           <div className="mb-10 rounded-[8px] border border-amber-300/18 bg-[linear-gradient(135deg,rgba(255,199,79,0.08),rgba(255,255,255,0.03))] p-4 md:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <SectionHeading
@@ -975,10 +1070,7 @@ export default function Page() {
                 text="Reserve seats early for upcoming releases before opening weekend arrives."
               />
               <button
-                onClick={() => {
-                  setActivePage("advance-tickets");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => goToPage("advance-tickets")}
                 className="inline-flex w-fit items-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-300 hover:text-[#171006]"
               >
                 View All Advance Tickets
@@ -999,6 +1091,11 @@ export default function Page() {
         ) : null}
 
         <div className="mb-6 text-center">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#86b7ff]">
+            {selectedDate === normalizeDateKey(new Date())
+              ? "Today's Showtimes"
+              : "Selected Date"}
+          </div>
           <div className="text-3xl font-semibold tracking-tight text-white md:text-5xl">
             Showtimes
           </div>
@@ -1067,9 +1164,9 @@ export default function Page() {
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => {
-                setActivePage("home");
-                setSelectedDate(normalizeDateKey(getNextWeekday(2)));
-                window.scrollTo({ top: 0, behavior: "smooth" });
+                goToPage("home", {
+                  selectedDate: normalizeDateKey(getNextWeekday(2)),
+                });
               }}
               className="rounded-2xl bg-[#77aef7] px-6 py-3 font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
             >
@@ -1096,9 +1193,9 @@ export default function Page() {
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => {
-                setActivePage("home");
-                setSelectedDate(normalizeDateKey(getNextWeekday(3)));
-                window.scrollTo({ top: 0, behavior: "smooth" });
+                goToPage("home", {
+                  selectedDate: normalizeDateKey(getNextWeekday(3)),
+                });
               }}
               className="rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-400"
             >
@@ -1621,12 +1718,10 @@ export default function Page() {
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(119,174,247,0.18),transparent_28%),linear-gradient(to_bottom,#0a1220,#060b13)]" />
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#08101b]/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 sm:py-4">
           <LogoMark
             onClick={() => {
-              setActivePage("home");
-              setMenuOpen(false);
-              window.scrollTo({ top: 0, behavior: "smooth" });
+              goToPage("home");
             }}
           />
 
@@ -1634,7 +1729,7 @@ export default function Page() {
             {pageLinks.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActivePage(item.id)}
+                onClick={() => goToPage(item.id)}
                 className="transition hover:text-white"
               >
                 {item.label}
@@ -1669,8 +1764,7 @@ export default function Page() {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActivePage(item.id);
-                    setMenuOpen(false);
+                    goToPage(item.id);
                   }}
                   className="rounded-xl bg-white/5 px-4 py-3 text-left"
                 >
