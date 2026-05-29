@@ -95,6 +95,32 @@ export async function GET() {
 
   const grouped = new Map<string, any>();
 
+  const buildMovie = (film: any) => {
+    const rawPosterCandidates = getPosterCandidates(film);
+    const rawBackdropCandidates = getBackdropCandidates(film);
+
+    const posterCandidates = unique(rawPosterCandidates.map(toProxyUrl).filter(Boolean));
+    const backdropCandidates = unique(rawBackdropCandidates.map(toProxyUrl).filter(Boolean));
+
+    return {
+      id: String(film.Id),
+      title: film.Title || "",
+      rating: film.Rating || "",
+      duration: film.Duration || 0,
+      openingDate: film.OpeningDate || "",
+      synopsis: film.Synopsis || "",
+      poster: posterCandidates[0] || "",
+      posterCandidates,
+      backdrop: backdropCandidates[0] || "",
+      backdropCandidates,
+      trailer: film.FilmTrailerUrl || "",
+      showtimes: [],
+    };
+  };
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
   for (const session of sessions) {
     const showType = String(session.ShowType || "").toLowerCase();
     const status = String(session.Status || "").toLowerCase();
@@ -108,26 +134,7 @@ export async function GET() {
     if (!film || !sessionTime) continue;
 
     if (!grouped.has(filmId)) {
-      const rawPosterCandidates = getPosterCandidates(film);
-      const rawBackdropCandidates = getBackdropCandidates(film);
-
-      const posterCandidates = unique(rawPosterCandidates.map(toProxyUrl).filter(Boolean));
-      const backdropCandidates = unique(rawBackdropCandidates.map(toProxyUrl).filter(Boolean));
-
-      grouped.set(filmId, {
-        id: String(film.Id),
-        title: film.Title || "",
-        rating: film.Rating || "",
-        duration: film.Duration || 0,
-        openingDate: film.OpeningDate || "",
-        synopsis: film.Synopsis || "",
-        poster: posterCandidates[0] || "",
-        posterCandidates,
-        backdrop: backdropCandidates[0] || "",
-        backdropCandidates,
-        trailer: film.FilmTrailerUrl || "",
-        showtimes: [],
-      });
+      grouped.set(filmId, buildMovie(film));
     }
 
     grouped.get(filmId).showtimes.push({
@@ -143,6 +150,19 @@ export async function GET() {
       fewTicketsLeft: !!session.FewTicketsLeft,
       format: session.FilmFormat || "",
     });
+  }
+
+  for (const film of films) {
+    const filmId = String(film.Id);
+    if (grouped.has(filmId) || !film.OpeningDate) continue;
+
+    const openingDate = new Date(film.OpeningDate);
+    if (Number.isNaN(openingDate.getTime())) continue;
+
+    openingDate.setHours(0, 0, 0, 0);
+    if (openingDate.getTime() >= startOfToday.getTime()) {
+      grouped.set(filmId, buildMovie(film));
+    }
   }
 
   const movies = Array.from(grouped.values()).map((movie: any) => ({
