@@ -722,15 +722,7 @@ function AdvanceBanner({
 
           <div className="flex max-w-2xl flex-col justify-between">
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full border border-amber-300/35 bg-amber-300/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-200">
-                  Advance Tickets
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
-                  On Sale Now
-                </span>
-              </div>
-              <div className="mt-4 text-2xl font-semibold tracking-tight text-white md:text-4xl">
+              <div className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
                 {movie.title}
               </div>
               <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/72">
