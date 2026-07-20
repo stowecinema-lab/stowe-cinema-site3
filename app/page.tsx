@@ -502,6 +502,48 @@ function MoviePoster({
   );
 }
 
+function MovieBackdrop({
+  title,
+  backdrop,
+  backdropCandidates = [],
+  fallback,
+}: {
+  title: string;
+  backdrop?: string;
+  backdropCandidates?: string[];
+  fallback?: string;
+}) {
+  const candidates = useMemo(() => {
+    const list = [backdrop || "", ...backdropCandidates, fallback || ""].filter(Boolean);
+    return Array.from(new Set(list));
+  }, [backdrop, backdropCandidates, fallback]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [title, backdrop, backdropCandidates, fallback]);
+
+  const currentBackdrop = candidates[currentIndex];
+
+  if (currentBackdrop) {
+    return (
+      <img
+        src={currentBackdrop}
+        alt={`${title} banner artwork`}
+        className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+        onError={() => {
+          setCurrentIndex((prev) => prev + 1);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(119,174,247,0.18),rgba(8,15,27,0.98))]" />
+  );
+}
+
 function ShowtimeChip({ show }: { show: Showtime }) {
   const soldOut = show.soldOut;
   const past = isPastShowtime(show);
@@ -750,51 +792,33 @@ function AdvanceBanner({
   movie: AdvanceBannerMovie;
   onOpen: (movie: AdvanceBannerMovie) => void;
 }) {
-  const bannerImage = movie.backdrop || movie.poster;
-  const posterImage = movie.poster || movie.backdrop;
-
   return (
     <button
       onClick={() => onOpen(movie)}
-      className="group relative w-full overflow-hidden rounded-[8px] border border-amber-300/20 bg-[#101723] text-left shadow-2xl shadow-black/30 transition duration-300 hover:-translate-y-1 hover:border-amber-200/45"
+      className="group relative w-full overflow-hidden rounded-[8px] border border-white/10 bg-[#101723] text-left shadow-2xl shadow-black/30 transition duration-300 hover:border-[#77aef7]/35"
     >
-      <div className="relative min-h-[210px] md:min-h-[240px]">
-        {bannerImage ? (
-          <img
-            src={bannerImage}
-            alt={`${movie.title} advance tickets`}
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.96)_0%,rgba(6,11,19,0.82)_48%,rgba(6,11,19,0.35)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,196,71,0.16),transparent_45%,rgba(6,11,19,0.6))]" />
+      <div className="relative min-h-[230px] md:min-h-[320px]">
+        <MovieBackdrop
+          title={movie.title}
+          backdrop={movie.backdrop}
+          backdropCandidates={movie.backdropCandidates}
+          fallback={movie.poster}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.82)_0%,rgba(6,11,19,0.28)_48%,rgba(6,11,19,0.72)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,11,19,0.18),transparent_42%,rgba(6,11,19,0.82))]" />
 
-        <div className="relative z-10 grid min-h-[210px] gap-4 p-4 md:min-h-[240px] md:grid-cols-[110px_1fr] md:p-5">
-          <div className="hidden overflow-hidden rounded-[8px] border border-white/12 shadow-xl shadow-black/40 md:block">
-            <MoviePoster
-              title={movie.title}
-              poster={posterImage}
-              posterCandidates={[
-                ...(movie.posterCandidates || []),
-                ...(movie.backdropCandidates || []),
-              ]}
-            />
+        <div className="relative z-10 flex min-h-[230px] flex-col justify-between p-5 md:min-h-[320px] md:p-7">
+          <div>
+            <div className="max-w-3xl text-3xl font-semibold tracking-tight text-white drop-shadow-lg md:text-5xl">
+              {movie.title}
+            </div>
+            <div className="mt-3 inline-flex rounded-full border border-white/12 bg-black/35 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/78 backdrop-blur">
+              Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
+            </div>
           </div>
 
-          <div className="flex max-w-2xl flex-col justify-between">
-            <div>
-              <div className="text-2xl font-semibold tracking-tight text-white md:text-4xl">
-                {movie.title}
-              </div>
-              <div className="mt-3 inline-flex rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/72">
-                Opens {formatLongDate(movie.openingDate || movie.firstShowtime.time)}
-              </div>
-            </div>
-
-            <div className="mt-5 inline-flex w-fit items-center gap-2 rounded-2xl bg-amber-300 px-4 py-2.5 text-sm font-semibold text-[#171006] shadow-lg shadow-amber-300/20 transition group-hover:bg-amber-200">
-              See Advance Showtimes
-              <ChevronRight className="h-4 w-4" />
-            </div>
+          <div className="-mx-5 -mb-5 flex items-center justify-center bg-[#77aef7] px-5 py-3 text-center text-sm font-bold uppercase tracking-[0.26em] text-[#07101c] transition group-hover:bg-[#a8ccff] md:-mx-7 md:-mb-7">
+            Tickets on sale now
           </div>
         </div>
       </div>
@@ -1008,6 +1032,7 @@ export default function Page() {
   const [selectedAdvanceMovieId, setSelectedAdvanceMovieId] = useState<string | null>(null);
   const [selectedMovieId, setSelectedMovieId] = useState<string | null>(null);
   const [trailerMovie, setTrailerMovie] = useState<Movie | null>(null);
+  const [activeAdvanceIndex, setActiveAdvanceIndex] = useState(0);
   const futureDateInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -1068,6 +1093,12 @@ export default function Page() {
       setSelectedAdvanceMovieId(advanceMovies[0].id);
     }
   }, [advanceMovies, selectedAdvanceMovieId]);
+
+  useEffect(() => {
+    if (activeAdvanceIndex >= advanceMovies.length) {
+      setActiveAdvanceIndex(0);
+    }
+  }, [activeAdvanceIndex, advanceMovies.length]);
 
   useEffect(() => {
     const initialState: PageState = {
@@ -1183,15 +1214,56 @@ export default function Page() {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-5 flex snap-x gap-4 overflow-x-auto pb-2">
-              {advanceMovies.slice(0, 3).map((movie) => (
-                <div key={movie.id} className="min-w-full snap-center md:min-w-[72%] lg:min-w-[58%]">
-                  <AdvanceBanner
-                    movie={movie}
-                    onOpen={openAdvanceMovie}
-                  />
-                </div>
-              ))}
+            <div className="relative mt-5">
+              <AdvanceBanner
+                movie={advanceMovies[activeAdvanceIndex] || advanceMovies[0]}
+                onOpen={openAdvanceMovie}
+              />
+
+              {advanceMovies.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveAdvanceIndex((index) =>
+                        index === 0 ? advanceMovies.length - 1 : index - 1
+                      )
+                    }
+                    className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                    aria-label="Previous advance ticket movie"
+                  >
+                    <ChevronLeft className="h-7 w-7" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveAdvanceIndex((index) =>
+                        index === advanceMovies.length - 1 ? 0 : index + 1
+                      )
+                    }
+                    className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                    aria-label="Next advance ticket movie"
+                  >
+                    <ChevronRight className="h-7 w-7" />
+                  </button>
+
+                  <div className="mt-3 flex justify-center gap-2">
+                    {advanceMovies.map((movie, index) => (
+                      <button
+                        key={movie.id}
+                        type="button"
+                        onClick={() => setActiveAdvanceIndex(index)}
+                        className={`h-2.5 rounded-full transition ${
+                          index === activeAdvanceIndex
+                            ? "w-8 bg-[#77aef7]"
+                            : "w-2.5 bg-white/25 hover:bg-white/45"
+                        }`}
+                        aria-label={`Show ${movie.title}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         ) : null}
