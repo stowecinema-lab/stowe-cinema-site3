@@ -131,11 +131,14 @@ export async function GET() {
   const unique = (values: string[]) =>
     Array.from(new Set(values.filter(Boolean)));
 
-  const toProxyUrl = (url?: string) => {
+  const toImageCandidates = (url?: string) => {
     const clean = normalizeUrl(url);
-    if (!clean) return "";
-    return `/api/poster?url=${encodeURIComponent(clean)}`;
+    if (!clean) return [];
+    return [clean, `/api/poster?url=${encodeURIComponent(clean)}`];
   };
+
+  const expandImageCandidates = (urls: string[]) =>
+    unique(urls.flatMap(toImageCandidates));
 
   const getPosterCandidates = (film: any) =>
     unique(
@@ -161,6 +164,23 @@ export async function GET() {
       [
         film.BackdropImageUrl,
         film.BannerImageUrl,
+        film.LandscapeImageUrl,
+        film.LandscapePosterUrl,
+        film.HeroImageUrl,
+        film.CoverImageUrl,
+        film.WideImageUrl,
+        film?.Images?.Backdrop,
+        film?.Images?.BackdropUrl,
+        film?.Images?.Banner,
+        film?.Images?.BannerUrl,
+        film?.Images?.Landscape,
+        film?.Images?.LandscapeUrl,
+        film?.Images?.Hero,
+        film?.Images?.HeroUrl,
+        film?.Media?.BackdropUrl,
+        film?.Media?.BannerUrl,
+        film?.Media?.LandscapeUrl,
+        film?.Media?.HeroUrl,
         film.FilmPosterUrl,
         film.FilmPosterThumbnailUrl,
         film.PosterUrl,
@@ -185,8 +205,8 @@ export async function GET() {
     const rawPosterCandidates = getPosterCandidates(film);
     const rawBackdropCandidates = getBackdropCandidates(film);
 
-    const posterCandidates = unique(rawPosterCandidates.map(toProxyUrl).filter(Boolean));
-    const backdropCandidates = unique(rawBackdropCandidates.map(toProxyUrl).filter(Boolean));
+    const posterCandidates = expandImageCandidates(rawPosterCandidates);
+    const backdropCandidates = expandImageCandidates(rawBackdropCandidates);
 
     return {
       id: String(film.Id),
