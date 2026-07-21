@@ -134,7 +134,7 @@ export async function GET() {
   const toProxyUrl = (url?: string) => {
     const clean = normalizeUrl(url);
     if (!clean) return "";
-    return `/api/poster?url=${encodeURIComponent(clean)}`;
+    return clean;
   };
 
   const getPosterCandidates = (film: any) =>
