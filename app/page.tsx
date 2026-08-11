@@ -850,9 +850,9 @@ function AdvanceBanner({
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,11,19,0.82)_0%,rgba(6,11,19,0.28)_48%,rgba(6,11,19,0.72)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,11,19,0.18),transparent_42%,rgba(6,11,19,0.82))]" />
 
-        <div className="relative z-10 flex min-h-[230px] flex-col justify-between p-5 md:min-h-[320px] md:p-7">
-          <div>
-            <div className="max-w-3xl text-3xl font-semibold tracking-tight text-white drop-shadow-lg md:text-5xl">
+        <div className="relative z-10 flex min-h-[230px] flex-col justify-between p-5 pb-16 md:min-h-[320px] md:p-7 md:pb-20">
+          <div className="max-w-[calc(100%-1rem)] md:max-w-[calc(100%-8rem)]">
+            <div className="text-3xl font-semibold tracking-tight text-white drop-shadow-lg md:text-5xl">
               {movie.title}
             </div>
             <div className="mt-3 inline-flex rounded-full border border-white/12 bg-black/35 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/78 backdrop-blur">
@@ -860,7 +860,7 @@ function AdvanceBanner({
             </div>
           </div>
 
-          <div className="-mx-5 -mb-5 flex items-center justify-center bg-[#77aef7] px-5 py-3 text-center text-sm font-bold uppercase tracking-[0.26em] text-[#07101c] transition group-hover:bg-[#a8ccff] md:-mx-7 md:-mb-7">
+          <div className="-mx-5 -mb-16 flex items-center justify-center bg-[#77aef7] px-5 py-3 text-center text-sm font-bold uppercase tracking-[0.26em] text-[#07101c] transition group-hover:bg-[#a8ccff] md:-mx-7 md:-mb-20">
             Tickets on sale now
           </div>
         </div>
@@ -1279,26 +1279,28 @@ export default function Page() {
                 <>
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={(event) => {
                       event.stopPropagation();
                       setActiveAdvanceIndex((index) =>
                         index === 0 ? advanceMovies.length - 1 : index - 1
                       );
                     }}
-                    className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                    className="absolute bottom-14 left-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff] md:bottom-16 md:left-5"
                     aria-label="Previous advance ticket movie"
                   >
                     <ChevronLeft className="h-7 w-7" />
                   </button>
                   <button
                     type="button"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={(event) => {
                       event.stopPropagation();
                       setActiveAdvanceIndex((index) =>
                         index === advanceMovies.length - 1 ? 0 : index + 1
                       );
                     }}
-                    className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                    className="absolute bottom-14 right-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff] md:bottom-16 md:right-5"
                     aria-label="Next advance ticket movie"
                   >
                     <ChevronRight className="h-7 w-7" />
@@ -1309,6 +1311,7 @@ export default function Page() {
                       <button
                         key={movie.id}
                         type="button"
+                        onMouseDown={(event) => event.preventDefault()}
                         onClick={(event) => {
                           event.stopPropagation();
                           setActiveAdvanceIndex(index);
@@ -1990,23 +1993,23 @@ export default function Page() {
   const renderPage = () => {
     switch (activePage) {
       case "now-playing":
-        return <NowPlayingPage />;
+        return NowPlayingPage();
       case "advance-tickets":
-        return <AdvanceTicketsPage />;
+        return AdvanceTicketsPage();
       case "coming-soon":
-        return <ComingSoonPage />;
+        return ComingSoonPage();
       case "movie-details":
-        return <MovieDetailsPage />;
+        return MovieDetailsPage();
       case "showtimes":
-        return <ShowtimesPage />;
+        return ShowtimesPage();
       case "private-events":
-        return <PrivateEventsPage />;
+        return PrivateEventsPage();
       case "green-room":
-        return <GreenRoomPage />;
+        return GreenRoomPage();
       case "contact":
-        return <ContactPage />;
+        return ContactPage();
       default:
-        return <HomePage />;
+        return HomePage();
     }
   };
 
