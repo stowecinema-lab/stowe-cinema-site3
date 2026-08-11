@@ -326,7 +326,7 @@ function getShowtimeFullness(show: Showtime) {
     return Math.max(0, Math.min(100, Math.round(show.occupancyPercent)));
   }
   if (show.fewTicketsLeft) return 85;
-  return 35;
+  return null;
 }
 
 function getShowtimeFullnessColor(percent: number) {
@@ -579,19 +579,18 @@ function ShowtimeChip({ show }: { show: Showtime }) {
   const past = isPastShowtime(show);
   const low = !soldOut && !past && show.fewTicketsLeft;
   const fullness = getShowtimeFullness(show);
-  const fullnessColor = getShowtimeFullnessColor(fullness);
-  const fullnessBar = (
+  const fullnessBar = fullness !== null ? (
     <span className="absolute inset-x-0 bottom-0 h-1 bg-black/20">
       <span
-        className={`block h-full ${fullnessColor}`}
+        className={`block h-full ${getShowtimeFullnessColor(fullness)}`}
         style={{ width: `${fullness}%` }}
       />
     </span>
-  );
+  ) : null;
 
   if (past) {
     return (
-      <span className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pb-3 text-sm font-semibold text-white/35">
+      <span className={`relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white/35 ${fullnessBar ? "pb-3" : ""}`}>
         <span className="line-through">{formatShowtime(show.time)} - Passed</span>
         {fullnessBar}
       </span>
@@ -600,7 +599,7 @@ function ShowtimeChip({ show }: { show: Showtime }) {
 
   if (soldOut) {
     return (
-      <span className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-3 py-2 pb-3 text-sm font-semibold text-white/40">
+      <span className={`relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/40 ${fullnessBar ? "pb-3" : ""}`}>
         {formatShowtime(show.time)} - Sold Out
         {fullnessBar}
       </span>
@@ -612,7 +611,7 @@ function ShowtimeChip({ show }: { show: Showtime }) {
       href={show.url || VEEZI_TICKETING_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative overflow-hidden rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-3 py-2 pb-3 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition-all duration-200 hover:scale-105 hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30"
+      className={`relative overflow-hidden rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-3 py-2 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition-all duration-200 hover:scale-105 hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30 ${fullnessBar ? "pb-3" : ""}`}
     >
       {formatShowtime(show.time)}
       {low ? " - Few Left" : ""}
