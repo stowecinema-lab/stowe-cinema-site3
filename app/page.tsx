@@ -25,6 +25,7 @@ type Showtime = {
   url?: string;
   soldOut?: boolean;
   fewTicketsLeft?: boolean;
+  occupancyPercent?: number | null;
   format?: string;
 };
 
@@ -319,6 +320,35 @@ function isPastShowtime(show: Showtime) {
   return new Date(show.time).getTime() < Date.now();
 }
 
+function getShowtimeFullness(show: Showtime) {
+  if (show.soldOut) return 100;
+  if (typeof show.occupancyPercent === "number") {
+    return Math.max(0, Math.min(100, Math.round(show.occupancyPercent)));
+  }
+  if (show.fewTicketsLeft) return 85;
+  return 35;
+}
+
+function getShowtimeFullnessColor(percent: number) {
+  if (percent >= 80) return "bg-red-500";
+  if (percent >= 50) return "bg-amber-300";
+  return "bg-emerald-400";
+}
+
+function scrollToShowtimeMovies() {
+  const scroll = () => {
+    const target = document.getElementById("selected-showtime-movies");
+    if (!target) return;
+
+    const offset = 92;
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, left: 0, behavior: "smooth" });
+  };
+
+  window.requestAnimationFrame(scroll);
+  window.setTimeout(scroll, 90);
+}
+
 function scrollToPageTop() {
   const scroll = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -548,19 +578,31 @@ function ShowtimeChip({ show }: { show: Showtime }) {
   const soldOut = show.soldOut;
   const past = isPastShowtime(show);
   const low = !soldOut && !past && show.fewTicketsLeft;
+  const fullness = getShowtimeFullness(show);
+  const fullnessColor = getShowtimeFullnessColor(fullness);
+  const fullnessBar = (
+    <span className="absolute inset-x-0 bottom-0 h-1 bg-black/20">
+      <span
+        className={`block h-full ${fullnessColor}`}
+        style={{ width: `${fullness}%` }}
+      />
+    </span>
+  );
 
   if (past) {
     return (
-      <span className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white/35 line-through">
-        {formatShowtime(show.time)} - Passed
+      <span className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pb-3 text-sm font-semibold text-white/35">
+        <span className="line-through">{formatShowtime(show.time)} - Passed</span>
+        {fullnessBar}
       </span>
     );
   }
 
   if (soldOut) {
     return (
-      <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-white/40">
+      <span className="relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-3 py-2 pb-3 text-sm font-semibold text-white/40">
         {formatShowtime(show.time)} - Sold Out
+        {fullnessBar}
       </span>
     );
   }
@@ -570,10 +612,11 @@ function ShowtimeChip({ show }: { show: Showtime }) {
       href={show.url || VEEZI_TICKETING_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-3 py-2 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition-all duration-200 hover:scale-105 hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30"
+      className="relative overflow-hidden rounded-xl border border-[#a8ccff]/70 bg-[#77aef7] px-3 py-2 pb-3 text-center text-sm font-bold text-[#07101c] shadow-lg shadow-[#77aef7]/18 transition-all duration-200 hover:scale-105 hover:bg-[#a8ccff] hover:shadow-[#77aef7]/30"
     >
       {formatShowtime(show.time)}
       {low ? " - Few Left" : ""}
+      {fullnessBar}
     </a>
   );
 }
@@ -1101,6 +1144,18 @@ export default function Page() {
   }, [activeAdvanceIndex, advanceMovies.length]);
 
   useEffect(() => {
+    if (activePage !== "home" || advanceMovies.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setActiveAdvanceIndex((index) =>
+        index === advanceMovies.length - 1 ? 0 : index + 1
+      );
+    }, 6500);
+
+    return () => window.clearInterval(timer);
+  }, [activePage, activeAdvanceIndex, advanceMovies.length]);
+
+  useEffect(() => {
     const initialState: PageState = {
       page: activePage,
       selectedDate,
@@ -1224,24 +1279,26 @@ export default function Page() {
                 <>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setActiveAdvanceIndex((index) =>
                         index === 0 ? advanceMovies.length - 1 : index - 1
-                      )
-                    }
-                    className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                      );
+                    }}
+                    className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
                     aria-label="Previous advance ticket movie"
                   >
                     <ChevronLeft className="h-7 w-7" />
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
+                    onClick={(event) => {
+                      event.stopPropagation();
                       setActiveAdvanceIndex((index) =>
                         index === advanceMovies.length - 1 ? 0 : index + 1
-                      )
-                    }
-                    className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
+                      );
+                    }}
+                    className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-black/20 bg-white text-[#07101c] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#dcecff]"
                     aria-label="Next advance ticket movie"
                   >
                     <ChevronRight className="h-7 w-7" />
@@ -1252,7 +1309,10 @@ export default function Page() {
                       <button
                         key={movie.id}
                         type="button"
-                        onClick={() => setActiveAdvanceIndex(index)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveAdvanceIndex(index);
+                        }}
                         className={`h-2.5 rounded-full transition ${
                           index === activeAdvanceIndex
                             ? "w-8 bg-[#77aef7]"
@@ -1295,7 +1355,7 @@ export default function Page() {
           handleFutureDateSelect={handleFutureDateSelect}
         />
 
-        <div className="mt-8">
+        <div id="selected-showtime-movies" className="mt-8 scroll-mt-28">
           <div className="mb-5 text-xl font-semibold text-white">
             {selectedDayMovies.length > 0
               ? formatLongDate(selectedDayMovies[0].showtimes[0].time)
@@ -1342,7 +1402,9 @@ export default function Page() {
               onClick={() => {
                 goToPage("home", {
                   selectedDate: normalizeDateKey(getNextWeekday(2)),
+                  scroll: false,
                 });
+                scrollToShowtimeMovies();
               }}
               className="rounded-2xl bg-[#77aef7] px-6 py-3 font-semibold text-[#09111e] transition hover:bg-[#90bdff]"
             >
@@ -1371,7 +1433,9 @@ export default function Page() {
               onClick={() => {
                 goToPage("home", {
                   selectedDate: normalizeDateKey(getNextWeekday(3)),
+                  scroll: false,
                 });
+                scrollToShowtimeMovies();
               }}
               className="rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-400"
             >
