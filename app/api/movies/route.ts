@@ -165,6 +165,13 @@ export async function GET() {
       toNumber(session.AvailableSeats) ??
       toNumber(session.SeatsRemaining);
 
+    if (sold !== null && available !== null && sold + available > 0) {
+      return Math.max(
+        0,
+        Math.min(100, Math.round((sold / (sold + available)) * 100))
+      );
+    }
+
     if (available !== null && capacity && capacity > 0) {
       return Math.max(
         0,
