@@ -131,6 +131,50 @@ export async function GET() {
   const unique = (values: string[]) =>
     Array.from(new Set(values.filter(Boolean)));
 
+  const toNumber = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const getOccupancyPercent = (session: any) => {
+    const directPercent =
+      toNumber(session.OccupancyPercent) ??
+      toNumber(session.PercentSold) ??
+      toNumber(session.SoldPercent) ??
+      toNumber(session.CapacitySoldPercent);
+
+    if (directPercent !== null) {
+      return Math.max(0, Math.min(100, directPercent));
+    }
+
+    const sold =
+      toNumber(session.SeatsSold) ??
+      toNumber(session.TicketsSold) ??
+      toNumber(session.SoldSeats);
+    const capacity =
+      toNumber(session.TotalSeats) ??
+      toNumber(session.Capacity) ??
+      toNumber(session.SeatCount);
+
+    if (sold !== null && capacity && capacity > 0) {
+      return Math.max(0, Math.min(100, Math.round((sold / capacity) * 100)));
+    }
+
+    const available =
+      toNumber(session.SeatsAvailable) ??
+      toNumber(session.AvailableSeats) ??
+      toNumber(session.SeatsRemaining);
+
+    if (available !== null && capacity && capacity > 0) {
+      return Math.max(
+        0,
+        Math.min(100, Math.round(((capacity - available) / capacity) * 100))
+      );
+    }
+
+    return null;
+  };
+
   const toImageCandidates = (url?: string) => {
     const clean = normalizeUrl(url);
     if (!clean) return [];
@@ -198,6 +242,9 @@ export async function GET() {
       session.URL || session.Url || session.url || "",
     ])
   );
+  const webSessionById = new Map(
+    webSessions.map((session: any) => [String(session.Id), session])
+  );
 
   const grouped = new Map<string, any>();
 
@@ -243,6 +290,8 @@ export async function GET() {
       grouped.set(filmId, buildMovie(film));
     }
 
+    const webSession = webSessionById.get(String(session.Id)) || {};
+
     grouped.get(filmId).showtimes.push({
       sessionId: String(session.Id),
       time: sessionTime,
@@ -254,6 +303,7 @@ export async function GET() {
         "",
       soldOut: !!session.TicketsSoldOut,
       fewTicketsLeft: !!session.FewTicketsLeft,
+      occupancyPercent: getOccupancyPercent({ ...webSession, ...session }),
       format: session.FilmFormat || "",
     });
   }
